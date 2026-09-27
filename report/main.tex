@@ -1,0 +1,91 @@
+% ==============================================================================
+% Politecnico di Milano - Multidisciplinary Project Report
+% Workload-Driven Exploration of Edge NPU Architectures for VLA Models
+% ==============================================================================
+
+% ! REMOVED twocolumn FROM THE []
+\documentclass[10.5pt,a4paper]{article}
+
+% Essential packages
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{eso-pic}
+\usepackage{transparent}
+\usepackage{caption}
+\usepackage{amsmath, amssymb, amsthm, bm, thmtools}
+\usepackage{tabularx, booktabs, colortbl}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+\usepackage{stfloats}
+\usepackage{microtype}
+
+%CUSTOM DASHLIST
+\newlist{dashlist}{itemize}{3}
+\setlist[dashlist,1]{
+    label=--,
+    leftmargin=1.2em,
+    labelsep=0.5em,
+    itemsep=0.7em,
+    topsep=0.4em,
+    parsep=0pt
+}
+\setlist[dashlist,2]{
+    label=--,
+    leftmargin=1.2em,
+    labelsep=0.5em,
+    itemsep=0.3em,
+    topsep=0.2em,
+    parsep=0pt
+}
+
+% Reference packages
+\usepackage[colorlinks=true,
+            linkcolor=black,
+            citecolor=blue!70!black,
+            urlcolor=blue!70!black]{hyperref}
+\usepackage{cleveref}
+\usepackage[square, numbers, sort&compress]{natbib}
+\bibliographystyle{plain}
+
+% Graphics path pointing directly to shared figures
+\graphicspath{{../figures/}{../figures/plots/}{../figures/polimi/}}
+
+% Load configuration
+\input{config/config}
+
+% Project metadata
+\renewcommand{\title}{Workload-Driven Exploration of Edge NPU Architectures for Vision-Language-Action Models}
+\newcommand{\subtitle}{subtitle}
+\renewcommand{\author}{Alessandro Ghiotto}
+\newcommand{\advisor}{Tommaso Spagnolo}
+% \newcommand{\coadvisor}{}
+\newcommand{\course}{High Performance Computing Engineering}
+\newcommand{\YEAR}{2026--2027}
+
+% ==============================================================================
+\begin{document}
+
+% Title Page
+\input{config/title_page}
+
+% Executive Abstract Box
+\input{sections/00_abstract}
+
+% Main Sections
+\input{sections/01_introduction}
+\input{sections/02_background}
+\input{sections/03_methodology}
+\input{sections/04_workload_analysis}
+% \input{sections/05_dse_scalesim}
+% \input{sections/06_validation}
+\input{sections/zz_conclusions}
+
+% Consolidated Bibliography
+\bibliography{references}
+
+\end{document}

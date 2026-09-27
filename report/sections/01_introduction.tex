@@ -1,0 +1,27 @@
+% !TEX root = ../main.tex
+
+\section{Introduction}
+\label{sec:introduction}
+
+% Vision-Language-Action (VLA) models have emerged as a foundational technology for autonomous robotic manipulation and embodied agents~\cite{black2024pi0,smolvla2025}. By ingesting high-resolution visual streams from multi-camera setups along with natural language prompts, VLAs predict high-frequency continuous robot action chunks (e.g., end-effector Cartesian velocities and gripper actuation states).
+
+\subsection{Problem Statement}
+% From a computer architecture perspective, a VLA pipeline is fundamentally non-uniform. It integrates three structurally distinct processing stages:
+% \begin{itemize}[leftmargin=*]
+%     \item \textbf{Vision Encoder:} High-resolution 2D image tokenization via Vision Transformers (ViT)~\cite{dosovitskiy2020image} or convolutional frontends, characterized by large, square, compute-bound General Matrix Multiplications (GEMMs).
+%     \item \textbf{VLM Backbone:} Autoregressive or bidirectional Transformer blocks~\cite{vaswani2017attention} performing multimodal cross-attention between visual and text tokens.
+%     \item \textbf{Iterative Action Generation:} Flow-matching or diffusion-based policy heads~\cite{black2024pi0} running multi-step numerical integration with small batches ($B=1$) and low operational reuse, exhibiting memory-bound and latency-critical execution.
+% \end{itemize}
+
+% Recent literature confirms that conventional edge accelerators, often tuned exclusively for dense convolutional or transformer vision models, suffer catastrophic utilization drops during action generation~\cite{vlabottleneck2026,vlaxpus2026}.
+
+\subsection{Research Questions}
+% This project aims to systematically answer four guiding research questions:
+% \begin{enumerate}[label=\textbf{RQ\arabic*.}, leftmargin=*]
+%     \item \textbf{Computational Decomposition:} How is a modern VLA composed computationally across its constituent stages? What GEMM/GEMV shapes $(M, N, K)$ dominate, and what is their arithmetic intensity?
+%     \item \textbf{Hardware Phase Alignment:} Do the distinct stages exhibit fundamentally opposing architectural demands? Which phases suffer from systolic array under-utilization or memory stalls?
+%     \item \textbf{Cross-Model Generalization:} How do architectural bottlenecks vary across distinct VLA families, e.g., autoregressive action discretization versus flow matching / diffusion heads ($\pi_0$ vs \texttt{SmolVLA})?
+%     \item \textbf{NPU Organization Suitability:} Does a single homogeneous NPU organization remain near-optimal across the full end-to-end workload, or does an optimal design require \textbf{heterogeneous or reconfigurable} spatial arrays?
+% \end{enumerate}
+% Answering RQ4 will establish the foundational motivation for a subsequent Master's thesis on specialized edge NPU architectures.
+

@@ -1,0 +1,31 @@
+# FOLDERS
+.vscode/
+.vscode/**
+papers/
+papers/**
+papers-intro/
+papers-intro/**
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+*.run.xml
+*.bcf
+*.vrb
+
+# OS and Editor artifacts
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+.idea/

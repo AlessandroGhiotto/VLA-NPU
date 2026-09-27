@@ -1,0 +1,98 @@
+% ==============================================================================
+% Politecnico di Milano - Report Configuration
+% ==============================================================================
+
+% Set the geometric layout of the document
+\usepackage{geometry}
+\geometry{
+  % top=3.0cm, %! IF YOU WANT THE BANNER
+  top=2.2cm,
+  left=2.5cm,  % Increased from 2.0cm for better single-column readability
+  right=2.5cm, % Increased from 2.0cm
+  bottom=2.2cm,
+  headheight=2.2cm,
+  headsep=0.2cm,
+}
+\raggedbottom 
+
+% Official PoliMi Blue Color
+\definecolor{bluePoli}{cmyk}{0.4,0.1,0,0.4}
+\definecolor{darkbluePoli}{RGB}{20, 43, 104}
+
+% Custom theorem environments
+\declaretheoremstyle[
+  headfont=\color{bluePoli}\normalfont\bfseries,
+  bodyfont=\color{black}\normalfont\itshape,
+]{colored}
+
+\captionsetup[figure]{labelfont={color=bluePoli,bf}}
+\captionsetup[table]{labelfont={color=bluePoli,bf}}
+\captionsetup[algorithm]{labelfont={color=bluePoli,bf}}
+
+\theoremstyle{colored}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}{Proposition}[section]
+
+% Table enhancements
+\newcommand\T{\rule{0pt}{2.6ex}}
+\newcommand\B{\rule[-1.2ex]{0pt}{0pt}}
+
+% Column types
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+% Itemize settings
+\setlist[itemize,1]{label=$\bullet$}
+\setlist[itemize,2]{label=$\circ$}
+\setlist[itemize,3]{label=$-$}
+\setlist{nosep}
+
+% Column separation for twocolumn layout
+% \setlength{\columnsep}{24pt}
+
+% Watermark background picture
+\newcommand\BackgroundPic{%
+	\put(230,358){%
+		\parbox[b][\paperheight]{\paperwidth}{%
+			\vfill
+			\centering
+			\transparent{0.35}
+			\includegraphics[width=0.5\paperwidth]{raggiera_polimi}%
+			\vfill
+		}%
+	}%
+}
+
+% Paragraph settings
+\setlength\parindent{0pt}
+\setlength\parskip{4pt plus 1pt minus 1pt}
+
+% Custom section formatting
+\titleformat{\section}
+{\color{bluePoli}\normalfont\large\bfseries}
+{\color{bluePoli}\thesection.}{0.8em}{}
+\titlespacing*{\section}
+{0pt}{2.2ex}{1ex}
+
+\titleformat{\subsection}
+{\color{bluePoli}\normalfont\normalsize\bfseries}
+{\color{bluePoli}\thesubsection.}{0.8em}{}
+\titlespacing*{\subsection}
+{0pt}{1.8ex}{0.8ex}
+
+% Custom headers and footers
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0mm}
+\renewcommand{\footrulewidth}{0mm}
+
+% ! REMOVED BANNER
+% Header banner
+% \chead[C]{%
+% \centering
+% \begin{tcolorbox}[arc=0pt, boxrule=0pt, colback=bluePoli!70, width=\textwidth, colupper=white, top=2pt, bottom=2pt]
+%     \small \textbf{Multidisciplinary Project Report} \hfill \textbf{\author} \hfill \textbf{PoliMi}
+% \end{tcolorbox}
+% }

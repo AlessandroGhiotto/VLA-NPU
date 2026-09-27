@@ -1,0 +1,791 @@
+% !TEX root = ../main.tex
+
+\section{Background}
+\label{sec:background}
+Table of contents of this summaries:
+\begin{itemize}
+    \item Foundations of DNN accelerators.
+    \begin{itemize}
+        \item Efficient Processing of Deep Neural Networks \cite{sze2020efficient}
+          (Sec.~\ref{subsec:efficient-processing-dnns})
+        \item Eyeriss - An Energy-Efficient Reconfigurable Accelerator for Deep CNNs \cite{chen2016eyeriss} (Sec.~\ref{subsec:eyeriss})
+        \item TPU — In-Datacenter Performance Analysis of a Tensor Processing Unit \cite{jouppi2017datacenter} (Sec.~\ref{subsec:tpus})
+    \end{itemize}
+    \item Transformer
+    \begin{itemize}
+        \item Attention Is All You Need \cite{vaswani2017attention} (Sec.~\ref{subsec:transformer})
+        \item An Image is Worth 16x16 Words — Vision Transformer \cite{dosovitskiy2020image} (Sec.~\ref{subsec:vit})
+    \end{itemize}
+    \item Vision-Language-Action models
+    \begin{itemize}
+        \item $\pi_0$ - A Vision-Language-Action Flow Model for General Robot Control \cite{black2024pi0} (Sec.~\ref{subsec:pi0})
+        \item SmolVLA \cite{smolvla2025} (Sec.~\ref{subsec:smolvla})
+    \end{itemize}
+    \item SotA architectures for VLA 
+    \begin{itemize}
+        \item Characterizing VLA Models: Identifying the Action Generation Bottleneck for Edge AI Architectures \cite{vlabottleneck2026}(Sec.~\ref{subsec:vla-bottleneck})
+        \item Characterizing Vision-Language-Action Models across Heterogeneous Edge Accelerators \cite{vlaxpus2026} (Sec.~\ref{subsec:vla-heterogeneous})
+    \end{itemize}
+\end{itemize}
+
+
+%--------------------------------------------------------------
+% FUNDAMENTALS OF DNN ACCELERATORS
+%--------------------------------------------------------------
+
+\subsection{Efficient Processing of DNNs}
+\label{subsec:efficient-processing-dnns}
+
+\subsubsection{Understanding DNNs}
+DNN models are different in terms of number of layers, layer types, layer shapes (filter size, \#channels, \#filters) and connections between layers. It's important to understand all of this variations for incorporating the right flexibility in a DNN accelerator.
+\begin{dashlist}
+    \item Connections: fully vs sparsely connected, weight sharing, feed forward vs recurrent.
+    \item \textbf{Data Types and Tensor Definitions}:
+    \begin{dashlist}
+        % \item \textbf{Activations}: Input and output values passing through network layers.
+        \item \textbf{Weights} ($\mathbf{F}$ / $f$): Model parameters of the filters.
+        \item \textbf{ifmap} ($\mathbf{I}$ / $i$): Input Feature Map ($C \times H \times W$).
+        \item \textbf{ofmap} ($\mathbf{O}$ / $o$): Output Feature Map ($M \times P \times Q$).
+        \item \textbf{psum} (Partial Sum): Intermediate accumulation result.
+        \item \textbf{bias} ($\mathbf{b}$ / $b$): bias ($M$).
+    \end{dashlist}
+
+    \item \textbf{Shape Parameters, Index Variables, and Spatial Relations}:
+    \begin{dashlist}
+        \item $N$ = Batch size ($0 \le n < N$).
+        \item $M$ = \# filters / output channels ($0 \le m < M$).
+        \item $C$ = \# input channels ($0 \le c < C$).
+        \item $H / W$ = Ifmap spatial height / width.
+        \item $R / S$ = Filter spatial height / width ($0 \le r < R, 0 \le s < S$).
+        \item $P / Q$ = Ofmap spatial height / width ($0 \le p < P, 0 \le q < Q$).
+        \item $U$ = Stride.
+        \item Spatial Output: $P = \frac{H - R + U}{U}, \quad Q = \frac{W - S + U}{U}$.
+    \end{dashlist}
+
+    \item \textbf{CONV LAYER}: 
+
+    \[
+    \mathbf{O}_{nmpq} = \left(\sum_{c=0}^{C-1} \sum_{r=0}^{R-1} \sum_{s=0}^{S-1} \mathbf{I}_{nc(Up+r)(Uq+s)} \mathbf{F}_{mcrs}\right) + \mathbf{b}_m .
+    \]
+    Where $Up+r$ and $Uq+s$ map the output position $(p, q)$ back to the spatial coordinates of the input feature map window.
+
+    
+    \item \textbf{FC LAYER}:
+    Special case of CONV layer where filter spatial size matches ifmap size ($R=H, S=W$), output spatial resolution is $1 \times 1$ ($P=Q=1$), and stride $U=1$:
+    
+    \[
+    \mathbf{O}_{nm} = \sum_{c=0}^{C-1} \sum_{h=0}^{H-1} \sum_{w=0}^{W-1} \mathbf{I}_{nchw} \mathbf{F}_{mchw} + \mathbf{b}_m .
+    \]
+
+    Matrix multiplication, memory bound (no weight sharing).
+    \item Non linearities: Sigmoid, tanh, ReLU family.
+    \item Pooling and unpooling: change the spatial resolution.
+    \item Normalization: normalize the input distribution of a layer such that we have zero mean and unit standard deviation.
+    \item Attention layer: matrix multiplication + feed forward + FC layers.
+\end{dashlist}
+
+\subsubsection{Metrics}
+To fairly evaluate all the design trade-offs, ALL the following metrics should be accounted.
+
+\begin{dashlist}
+    \item \textbf{Accuracy:} quality of the results. It should be interpreted in the context of the difficulty of the task.
+    \item \textbf{Latency:} the time between when the input data arrives to a system and when the result is generated.
+    
+    \textbf{Throughput:} \#OPs/s. Depends on the complexity of the single operation, the clock frequency, the number of active PEs, the utilizations of the PEs, the number of ineffectual operations exploited by the HW.
+    
+    Roofline model: throughput is bounded by the bandwidth when the operational intensity (\#OPs/byte) is low. Instead it is bounded by the max achievable throughput when the operational intensity is high.
+    \item \textbf{Energy efficiency:} amount of data that can be processed for a given unit of energy. 
+    
+    \textbf{Power consumption:} amount of energy consumed per unit time.
+
+    Don't only report the energy efficiency and power consumption of the chip, but also the energy efficiency and power consumption of the off-chip memory (DRAM) or the amount of off-chip accesses.
+    The number of MAC operations is not enough, doesn't say how the data is accesed or reused.
+
+    \item Hardware cost.
+    \item \textbf{Flexibility:} the range od DNN models supported.
+    \item \textbf{Scalability:} report performance and efficiency metrics as the number of PEs and storage capacity increases. 
+\end{dashlist}
+
+\subsubsection{Designing DNN Accelerators}
+
+\begin{dashlist}
+    \item 
+    \begin{dashlist}
+        \item \textbf{Temporal architecture:} centralized control of many ALUs, which can only fetch data from the main memory, they can't communicate with each other. SIMD/SIMT for improving parallelism.
+        \item \textbf{Spatial architecture:} allows for communication between ALUs. PE: each ALU can have it's own control logic, and a local memory (scratchpad) or a register file.
+    \end{dashlist}
+
+    \item  Different MACs can only resue data for at most one data type at a time.
+    \begin{center}
+        MAC(ifmap, weights, psums)
+    \end{center}
+    
+    \item The mapping depends on the HW (fixed) and the model (change). The set of supported mappings is called a \textit{dataflow}.
+    \begin{center}
+        Optimization(HW design, shape \& size of DNN)
+    \end{center} 
+    
+
+    \item Techniques for exploiting data reuse: 
+    \begin{dashlist}
+        \item \textbf{Temporal reuse:} the same data value is used more than once by the PE, this may be exploited by adding an intermediate memory. Data in the intermediate level may be replaced, and it depends on the reuse distance. Decreasing the reuse distance of one data type increases the reuse distance of the others.
+        \item \textbf{Spatial reuse:} the same data valaue is used by more than one PE at different spatial locations of the HW. Exploiting spatial reuse creates more duplicated data, the other option is to support multicast which is expensive at large scale. 
+    \end{dashlist}
+    
+    \item The order of operations prioritize reducing the reuse distance of one data type over the others, this prioritize data type is stationary over time. stationariness is controlled by the ordering of the nested loops.
+    
+    \item \textbf{Tiling.} \textit{Temporal tiling}: maximize the reuse of the values held in the smaller and faster memories. The reuse is higher if a single tile of weights is used repeatedly to create a series of psums, and if the tile is small enough to be held in the memory closest to the compute units. \textit{Spatial tiling}: reuse the same data value by as many PEs as possible, reduce the reuse distance so that one multicast can serve as many PEs as possible given a fixed amount of storage capacity at each PE.
+    
+    The goal of tiling is to \textbf{exactly match} the reuse distance of a data type to the available storage capacity at a certain level. Overlt reducing the reuse distance doesn't give any benefit, just increase the reuse distance of the other data types.
+
+    \item \textbf{Dataflow:} specifies an ordering, and which operations run in parallel. Described by \textit{loop nests}.
+    \begin{dashlist}
+        \item Outer loop: stationary values. This data values are loaded only once, they are reused for each inner loop. 
+        \item Inner loop: what I reload each time.
+        \item Tiling is done by picking a dimension of the corresponding data type and breaking it up into multiple loops.
+        \item \texttt{parallel-for} loops run on parallel PEs
+    \end{dashlist}
+    A dataflow describe this aspects of a loop nest: (1) order of the loops (which data types e prioritize); (2) number of loops for each data dimension (desribe the tiling); (3) whether each of the loops is temporal or spatial.
+
+    \item \textbf{DATAFLOW TAXONOMY.}
+    \begin{dashlist}
+        \item \textbf{Weight Stationary (WS):} maximize the reuse of weights, while the ifmaps are broadcast and the psums are spatially accumulated.
+        \item \textbf{Output Stationary (OS):} minimize the energy consumption of reading and writing the psums by accumulating them in the PE. While the ifmaps are streamed and the weights are broadcast.
+        \item \textbf{Input Stationary (IS):} minimize the enrgy consumption of reading the ifmaps, while unique filter weights are uni-cast and the psums are spatially accumulate.
+        \item \textbf{Row Stationary (RS):} maximize the reuse of all types of data for the overall energy efficiency.
+    \end{dashlist}
+    \item \textbf{Pipeline.} It needs: (1) a series of ifmaps needs to bre processed; (2) interstage registers; (3) all stages should be balanced.
+    
+    \item \textbf{BUFFER MANAGEMENT STRATEGIES.} A dataflow control where and when data is buffered, we need also a \textit{buffering scheme} that should achieve good data orchestration.
+    \begin{dashlist}
+        \item \textbf{Implicit} data orchestration: \textit{caches}. we have a replacement policies, the load request initiator doesn't control the cache hierarchy decisions.
+        
+        \textbf{Explicit} data orchestration: \textit{scratchpads}, which expose and address range, we have control over the data orchestration (ex: GPU's shared mem). We have instructions for transfering data into and out the scratchpad.
+
+        \item \textbf{Coupled} staging of data: \textit{load/store}.
+        
+        \textbf{Decouple} the load request initiator and the response receiver. A DMA engine is responsible for pushing data into FUs' buffers
+        
+        \item \textbf{Explicit Decoupled Data Orchestration (EDDO).} An exampler are FIFO buffers, but they are not flexible enough. \textit{Buffets} store values in a circular buffer and allows the following operations: push a value; read the head value; read the value at a given offset from the head; read and update a value at a given offest; remove a given number of entries (shrink). Buffets are composable.
+    \end{dashlist} 
+
+    \item \textbf{FLEXIBLE NOC DESIGN.} The NoC should support the data delivery patterns of various dataflows. It should consider: (1) high parallelism; (2) exploit data reuse; (3) can be scaled.
+    
+    \begin{center}
+        Spatial accumulation $\Rightarrow$ WS
+
+        Temporal accumulation $\Rightarrow$ OS
+    \end{center}
+
+    The varying amount of data reuse for each type across layers or models pose a challenge to the NoC design.
+
+    \textbf{Hierarchical Mesh Network:} we have an all-to-all network within the scope of a cluster, then the clusters are further connected with a mesh network. This allows for an high connectivity, but it is also schelable.
+\end{dashlist}
+
+\subsubsection{Operation Mapping on Specialized HW}
+Mapping involves the placement and scheduling in sapce and time of every operation. Steps: (1) determine the datawflow; (2) determine the data tile sized; (3) bind the operations to the HW.
+\begin{dashlist}
+    \item Mapping = selecting and parametrizing loop nests.
+    \item Architecture: dataflow, buffer sizes (processors' RF) and NoC connectivity. Microarchitecture: detalied informations.
+    \item The map space is constructed by considering the problem spec and the dataflow.
+    \item The Perf/energy of a model considers the problem, the dataflow and the implementation
+    \item A configuration is created by an optimizer, by iterating over the mapping and evaluating the perf/energy of them,
+\end{dashlist}
+
+\subsubsection{Reducing Precision}
+\begin{dashlist}
+    \item Minimize the number of bits while also maintaing accuracy. Reduces the amount of data movement, the amount of storage required and the cost of the MAC HW.
+    \item \textbf{Quantization:} maps a set of values (full precision) to a reduced set of values (reduced precision). Quantization levels = number of values; quantization values = actual values.
+    \item Uniform vs non-uniform quantization.
+    \item Computable vs non computable (look-up table) relationship between the quantized values to the quantization values.
+    \item Exponents = range of values; Mantissa = \#unique values for each scaling factor; signed/unsigned - negative number are represented in two's complement.
+    \item ex: 8-bit fixed point for inference, 16-bit floating points for training, 32-bit floating points for the accumulation.
+    \item Optimal quantization depends on the distribution of the data. Mized precision: use different precision on different data types.
+    \item \textbf{Varying precision:} when the precision vary across different parts of a DNN model, requires HW support. Ex: we can chose to do one multiplication with 8-bits or 2 with 4-bits.
+\end{dashlist}
+
+\subsubsection{Exploiting Sparsity}
+\begin{dashlist}
+    \item \textbf{Sources of sparsity.}
+    \begin{dashlist}
+        \item Activation sparsity. Due to ReLUs; correlation in the input data (if the difference is zero between valued of the same neighbourhood of pixels.); upconvolutional layers.
+        \item Weight sparsity. Repeated weights in a filter, this can be exploited offline, we know the weights. Reordering the weights can reduce the number of weight accesses.
+        \item \textbf{Network pruning.} (1) Weight removal: we decide which weights we want to remove by scopring, grouping and ranking them. (2) Fine-tuning: update the values ofo the remaining weights. (3) Scheduling: how many weights to prune in each iteration.
+    \end{dashlist}
+    
+    \item \textbf{TENSORS.}     
+    \begin{dashlist}
+        \item There is a conseptual partitioning between the activity on the tensors (dataflow) and their representation.
+        \item Tree-based tensor representation (\textit{Fiber-tree} representation).
+        \item In practice the order of the ranks matters, since it can affect the cost of access.
+        \item The axis of the matrix are called \textit{ranks}, the individual elements of a rank are called \textit{coordinated}.
+        \item At each coordinate of a rank we have a value (\textit{payload}), this value is a \textit{fiber} for intermediate ranks, and it's just a value for the lowest ranks. A giber is a set of coordinates and their associated payloads.
+        \item Implicit: the position serve as coordinate, fibers are 1-D arrays. Explicit: we have also the position, compressed representation of fibers as a coordinate/payload list.
+        \item Uncompressed or Compressed. Run-lenght encoding, binary mask\dots
+    \end{dashlist}
+
+    \item \textbf{SPARSE DATAFLOWS.}
+    \begin{dashlist}
+        \item Supporting sparsity means that we need additional HW to identify non-zero values.
+        \item A sparse dataflow use traversals of the sparse tensor abstraction.
+        \item We iterate over the non-zero values only when we travers a sparse tensor, not over array (there we travers all values).
+        \item A sparse architecture is made of: (1) a dataflow that operates on an abstract representation of a sparse tensor; (2) implementation choices for the concrete data formats for the tensors.
+    \end{dashlist}
+\end{dashlist}
+
+\subsubsection{Designing Efficient DNN Models}
+To achieve efficiency we may also want to design an efficient DNN network architecture. Remark: reducing the number of weights, activations and MACs doesn't necessarily translate to reduced energy consumption. We must also consider the utilization and the cost of data movement, which depends on the HW, we must consider how the DNN model is mapped on the HW!
+
+\begin{dashlist}
+    \item We can replace a big filter (5x5) with small filters (a 5x1 + a 1x5).
+    \item The number of input channels can be reduced via 1x1 CONV layers.
+    \item Grouped convolutions: we have G groups, each group has C/G filters, which are "convoluted" with C/G ifmaps. We don't apply all the filters to all ifmaps.
+    \item We can reduce the number of output channels to be generated by reusing old output channels.
+    \item \textbf{Neural Architecture Search (NAS).} 3 components: search space, optimization algorithm, and performance evaluation. 
+    \item Knowledge distillation: we train a smaller model (student) to mimic the output of an already trained model (teacher).
+\end{dashlist}
+
+\subsubsection{Advanced Technologies}
+\begin{dashlist}
+    \item \textbf{Processing near memory.} Embedding high density memories on chip. Stacked memory (3D-memory, HBM) where we stack DRAM on top of the chip.
+    \item \textbf{Processing in memory.} ifmaps and weights are read out from their respective memories and processed by MAC arrays. We can use also Non-Volatile Memories (NVM), they allows to increase density. The problem is that they have an high cost of programming the cells, so we should have NVMs big enough to hold all the weights. A drawback of IMC is that the utilization drops if we can't fill entire rows or columns.
+\end{dashlist}
+
+\subsection{Eyeriss}
+\label{subsec:eyeriss}
+
+\subsubsection{System Architecture}
+\begin{dashlist}
+    \item \textbf{Spatial Architecture}: $168$ PEs organized in a $12 \times 14$ array operating in a core clock domain.
+    \item Each PE can either communicate with its neighbor PEs or the Global Buffer (GLB) through a NoC, or acces a local memory (spad). There are four levels of memory hierarchy: DRAM, GLB, inter-PE communication, and spads.
+    \item The PEs run independently of each other, they don't proceed in lock steps, so they don't behave as a systolic array.
+    \item \textbf{Row Stationary (RS) dataflow.}
+    \begin{dashlist}
+        \item minimizes data movement for all data types to achieve the best energy efficiency.
+        \item \textit{1-D Convolutional Primitive:} each primitive operaates on one row of filter weights and one row of ifmaps values, and generate one row of psums.
+        \item \textit{2-D Convolution PE set:} it's composed of many 1-D convolutional primitives, and it's computation: (1) shares the same row of filter of ifmap across primitives, (2) accumulates the psums from multiple primiteves together.
+        \item If the spad size is large enough, each PE can run multiple 1-D CONV simultaneously by interleaving their computation.
+        \item The PE array can fit more than on PE set if the set is small enough. This increase utilization, reuse of the ifmaps, further accumulation of the psums.
+        \item The GLB buffers ifmpas and psums. The ifmaps can be reused across multiple processing passes; the psums use the GLB as the intermediate storage.
+    \end{dashlist}
+    \item \textbf{Run-Length Compression (RLC).} By using a compression scheme we can reduce the number of DRAM accesses and skip unnecessary computations. RLC is used to exploit the zeros in the fmaps (outputs of ReLUs). The number of consecutive zeros are represented using 5-b (\textit{run}), the next value is inserted as a 16-b \textit{level}. In 64-b we have: [run, level, run, level, run, level, 0].
+\end{dashlist}
+
+\subsubsection{System Modules}
+\begin{dashlist}
+    \item \textit{Global Buffer.} It communicates with DRAM through the asyncrhonous interface and with the PE array throught the NoC. It is divided into 25 reconfigurable SRAM banks ($512\text{-bit} \times 64\text{-bit}$, 4 kB each) dynamically allocated between ifmaps and psums.
+    \item \textit{NoC.} It manages data delivery between the GLB and the PE array, and the data delivery between different PEs. Requirements: it should support the data delivery patterns used in the RS dataflow, should leverage the data reuse achieved by the RS dataflow, and should provide enough bandwidth. It has 3 different parts:
+    \begin{dashlist}
+        \item \textit{Global Input Network (GIN):} 
+        Two-level hierarchy (1 vertical Y-bus $\to$ 12 horizontal X-buses) delivering single-cycle multicast from GLB to PEs. The same filter weights, ifmaps, psums are delivered to all PEs (multicast).
+        \item \textit{Global Output Network (GON):} used for reading the psums generated by a processing pass from a PE array back to the GLB. Same architecture as the GIN.
+        \item \textit{Local Netowrk:} between every pair of PEs that are on two consecutive rows of the same column.
+    \end{dashlist}
+    \item \textit{PE and Data Gating.} The datapath is pipelined into three stages: one for spad access and two for computation. The computation consists of a 16-b two-stage pipelined multiplier and adder. Data gating logic is implemented, we check if the ifmaps are zero to save power.
+\end{dashlist}
+
+% \subsubsection{Hardware Specifications and Benchmark Metrics}
+% \begin{dashlist}
+%     \item \textbf{Fabrication}: 65-nm CMOS process ($18.5 \text{ mm}^2$ die area).
+%     \item \textbf{Core Specs}: 1.0 V supply, 200 MHz core clock, 33.6 GMACS peak throughput.
+%     \item \textbf{AlexNet Performance} ($N=4$): 34.7 frames/s, 278 mW power consumption, 83.1 GMACS/W energy efficiency, and 0.0029 DRAM access/MAC.
+%     \item \textbf{VGG-16 Performance} ($N=3$): 0.7 frames/s, 236 mW power consumption, and 0.0035 DRAM access/MAC.
+% \end{dashlist}
+
+\subsection{TPUs}
+\label{subsec:tpus}
+
+\subsubsection{TPU Architecture}
+\begin{dashlist}
+    \item The TPU was designed as a coprocessor, that you can plug into existing servers like a GPU; but unlike a GPU, the host server sends TPU instructions rather than fetching them itself. The goal was to run whole inference models in the TPU, to reduce interaction with the host CPU, and to be flexible enough to match future DNN needs. The target are inference apps, which favors latency over throughput. Designed for dense matrixes.
+    \item \textbf{Blocks:}
+    \begin{dashlist}
+        \item \textit{Matrix Multiply Unit (MMU).} It contains 256x256 MACs that can perform 8-b multiply-and-adds on integers.
+        \item \textit{Accumulators.} The MMU produces 16-bit psums, which accumulate into the 32-bit Accumulators (4 MiB total).
+        \item Weights are staged through an on chip \textit{Weight FIFO}, that reads from an off-chip DRAM called \textit{Weight Memory}.
+        \item \textit{Activation.} Applies nonlinear functions.
+        \item \textit{Unified Buffer (UB).} It's an on-chip memory holding intermediate results, it can serve as input to the MMU.
+        \item \textit{DMA Controller.} It transfers the data between the CPU host memory and the UB.
+        \end{dashlist}
+    \item \textbf{CISC Instructions:}
+    \begin{dashlist}
+        \item \verb|Read_Host_Memory|: CPU mem \verb|->| UB.
+        \item \verb|Read_Weights|: Weight Memory \verb|->| Weight FIFO.
+        \item \verb|MatrixMultiply/Convolve|: makes the MMU perform a matrix multiply/convolution from the UB to the Accumulators.
+        \item \verb|Activate|: performs a nonlinear function, from Accumulators to UB.
+        \item \verb|Write_Host_Memory|: UB \verb|->| CPU mem.
+    \end{dashlist}
+    The aim is to keep the MMU busy. The TPU uses a 4-stage pipeline, where each instruction executes in a separate stage. The aim is to hide the execution of the other instructions by overlapping their execution with the \verb|MatrixMultiply| instruction. CISC instructions can occupy a stage for thousands of clock cycles.
+    \item Since arithmetic is cheap, the MMU uses systolic execution to save energy by reducing reads/writes of the UB. It relies on data from different directions arriving at cells in an array at regular intervals where they are combined.
+\end{dashlist}  
+
+\subsubsection{Performance}
+\begin{dashlist}
+    \item \textbf{Roofline Model.} Applications don't fit in on-chip caches, so they are either computation-limited or memory bandwidth-limited. With low operational intensity (FLOPS/Byte) a program is memory bandwidth-limited; with high operational intensity a program is bounded by the max achievable computation rate (FLOPS/sec). The gap between the actual FLOP/sec and the ceiling shows the potential benefit.
+    RESULTS:
+    \begin{dashlist}
+        \item LSTM and MLP are memory-bound, instead CNN is compute-bound.
+        \item In the TPU almost all aplications touch the ceiling, for the CPU and the GPU they don't. The reason is the response time, small increases in response time cause customers to use a service less; so the CPU and GPU can't epxloit their potentially higher throughput if they don't meet the response-time limit.
+        \item The TPU has no sophisticated feature that consume energy (caches, branch prediction, out-of-order execution...). "Minimalism is a virtue of domain-specific processors".
+        \item The inflection point (where we go from memory-bound to compute-bound) of the TPU it's more on the right wrt the CPU's and GPU's inflection point. Since the TPU has lower bandwidth and higher peak performance. 
+    \end{dashlist}
+    \item \textbf{Energy Proportionality:} servers should consume power proportional to the amount of work performed. The TPU has the lowest power, but it has poor energy proportionality: at 10\% load, the TPU uses 88\% of the power it uses at 100\%. 
+    \item \textbf{Summary TPU success.} Low utilization of a huge, low-cost compute engine still yields high cost-effective performance.
+    The large MMU; the SW-controlled on-chip memory; the ability to run whole inference models to reduce dependence on CPU; a single-threaded, deterministic execution model (proved to be good on 99-percentile response limits); enough flexibility for DNNs; omission of general purpose features (so the TPU can be low power despite the large datapath and memory); the use of 8-b integers.
+\end{dashlist}
+
+    % \item \textbf{Latency Limits and Throughput (99th-Percentile SLA)}:
+    % \begin{dashlist}
+    %     \item User-facing inference applications impose strict latency constraints (e.g., 7 ms SLA limit for MLP0).
+    %     \item At small batch sizes required to meet 7 ms latency: CPU runs at batch 16 ($7.2 \text{ ms}$, 42\% of max IPS); GPU runs at batch 16 ($6.7 \text{ ms}$, 37\% of max IPS).
+    %     \item TPU achieves $80\%$ of its max throughput at batch size 200 while meeting the $7.0 \text{ ms}$ response-time limit.
+    % \end{dashlist}
+
+    % \item \textbf{Performance and Energy Ratios}:
+    % \begin{dashlist}
+    %     \item \textit{Relative Performance (per die)}: TPU is $14.5\times$ (geometric mean) and $29.2\times$ (weighted production mix mean) faster than Haswell CPU; TPU is $13.2\times$ (GM) and $15.3\times$ (WM) faster than K80 GPU.
+    %     \item \textit{Total Performance/Watt (server level)}: TPU is $17\times - 34\times$ higher than Haswell CPU and $14\times - 16\times$ higher than K80 GPU.
+    %     \item \textit{Incremental Performance/Watt}: TPU is $41\times - 83\times$ higher than Haswell CPU and $25\times - 29\times$ higher than K80 GPU.
+    % \end{dashlist}
+
+    % \item \textbf{Hypothetical Redesign ($\text{TPU}'$)}:
+    % \begin{dashlist}
+    %     \item Upgrading Weight Memory to GDDR5 ($5\times$ bandwidth increase) moves the roofline ridge point to $250 \text{ Ops/Byte}$.
+    %     \item Boosts performance by $2.6\times - 3.9\times$ ($30\times - 50\times$ faster than CPU/GPU) and increases Performance/Watt to $70\times - 200\times$ over Haswell/K80.
+    % \end{dashlist}
+
+%---------------------------------------------------------------------
+% TRANSFORMER AND VISION TRANSFORMER
+%---------------------------------------------------------------------
+
+\subsection{Attention is All You Need}
+\label{subsec:transformer}
+
+\subsubsection{The Transformer Architecture}
+The Transformer is a sequence transduction model (\textit{seq2seq}) relying entirely on self-attention mechanisms, dispensing with recurrent and convolutional layers entirely. It adopts an auto-regressive encoder-decoder structure.
+
+\begin{dashlist}
+    \item \textbf{Architecture Components}:
+    \begin{dashlist}
+        \item \textbf{Encoder}: Stack of $N = 6$ identical layers. Each layer contains two sub-layers: a multi-head self-attention mechanism and a position-wise fully connected feed-forward network. Residual connections and Layer Normalization are applied around each sub-layer: $\text{LayerNorm}(x + \text{Sublayer}(x))$.
+        \item \textbf{Decoder}: Stack of $N = 6$ identical layers. Inserts a third sub-layer performing multi-head attention over the encoder output stack. Self-attention sub-layers in the decoder are masked to prevent positions from attending to subsequent positions.
+    \end{dashlist}
+    
+    \item \textbf{Names and Shape Parameters}:
+    \begin{dashlist}
+        \item $N = 6$ (number of identical layers in encoder and decoder stacks),
+        \item $d_{\text{model}} = 512$ (output dimension of all sub-layers and embedding layers),
+        \item $h = 8$ (number of parallel attention heads),
+        \item $d_k = d_v = d_{\text{model}} / h = 64$ (dimension of keys, queries, and values per head),
+        \item $d_{\text{ff}} = 2048$ (inner-layer hidden dimension of feed-forward networks),
+        \item $n$ = sequence length,
+        \item $P_{\text{drop}} = 0.1$ (residual dropout rate).
+    \end{dashlist}
+
+    \item \textbf{SCALED DOT-PRODUCT ATTENTION}: 
+    
+    Maps queries ($Q$), keys ($K$), and values ($V$) to an output matrix using scaled dot products and softmax normalization:
+    \[
+    \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{Q K^T}{\sqrt{d_k}}\right) V .
+    \]
+    The scaling factor $\frac{1}{\sqrt{d_k}}$ counteracts large dot products that would otherwise push the softmax function into regions with extremely small gradients.
+
+    \item \textbf{MULTI-HEAD ATTENTION}:
+    
+    Linearly projects $Q$, $K$, and $V$ $h$ times with learned projections into $d_k$ and $d_v$ dimensions, running attention in parallel across distinct representation subspaces:
+    \[
+    \text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \dots, \text{head}_h) W^O ,
+    \]
+    \[
+    \text{where } \text{head}_i = \text{Attention}(Q W_i^Q, K W_i^K, V W_i^V) .
+    \]
+    Projection matrices: $W_i^Q \in \mathbb{R}^{d_{\text{model}} \times d_k}$, $W_i^K \in \mathbb{R}^{d_{\text{model}} \times d_k}$, $W_i^V \in \mathbb{R}^{d_{\text{model}} \times d_v}$, and $W^O \in \mathbb{R}^{h d_v \times d_{\text{model}}}$.
+
+    \item \textbf{POSITION-WISE FEED-FORWARD NETWORK (FFN)}:
+    
+    Applied to each position separately and identically across encoder and decoder layers:
+    \[
+    \text{FFN}(x) = \max(0, x W_1 + b_1) W_2 + b_2 .
+    \]
+
+    \item \textbf{POSITIONAL ENCODING}: 
+    
+    Sinusoidal functions added to input embeddings to inject relative and absolute token positioning without recurrence:
+    \[
+    \text{PE}_{(pos, 2i)} = \sin\left(\frac{pos}{10000^{2i / d_{\text{model}}}}\right), \quad \text{PE}_{(pos, 2i+1)} = \cos\left(\frac{pos}{10000^{2i / d_{\text{model}}}}\right) .
+    \]
+\end{dashlist}
+
+\subsubsection{Computational Complexity Comparison}
+Self-attention layers connect all positions with $O(1)$ sequential operations, minimizing path lengths for learning long-range dependencies.
+
+\begin{dashlist}
+    \item \textbf{Self-Attention}: Per-layer complexity $O(n^2 \cdot d_{\text{model}})$, Sequential Operations $O(1)$, Maximum Path Length $O(1)$.
+    \item \textbf{Recurrent Layer}: Per-layer complexity $O(n \cdot d_{\text{model}}^2)$, Sequential Operations $O(n)$, Maximum Path Length $O(n)$.
+    \item \textbf{Convolutional Layer}: Per-layer complexity $O(k \cdot n \cdot d_{\text{model}}^2)$, Sequential Operations $O(1)$, Maximum Path Length $O(\log_k(n))$.
+    \item \textbf{Restricted Self-Attention}: Per-layer complexity $O(r \cdot n \cdot d_{\text{model}})$, Sequential Operations $O(1)$, Maximum Path Length $O(n/r)$.
+\end{dashlist}
+
+% \subsubsection{Training Setup and Metrics}
+% \begin{dashlist}
+%     \item \textbf{Hardware and Schedule}: Trained on 8 NVIDIA P100 GPUs. Base model trained for 100k steps (12 hours); Big model trained for 300k steps (3.5 days).
+%     \item \textbf{Optimizer}: Adam ($\beta_1 = 0.9, \beta_2 = 0.98, \epsilon = 10^{-9}$) with custom inverse square-root decay and 4000 warmup steps:
+%     \[
+%     lrate = d_{\text{model}}^{-0.5} \cdot \min\left(\text{step\_num}^{-0.5}, \text{step\_num} \cdot \text{warmup\_steps}^{-1.5}\right) .
+%     \]
+%     \item \textbf{Regularization}: Residual Dropout ($P_{\text{drop}} = 0.1$) and Label Smoothing ($\epsilon_{ls} = 0.1$).
+%     \item \textbf{Key Results / Metrics}:
+%     \begin{dashlist}
+%         \item \textbf{WMT 2014 EN-DE}: 28.4 BLEU (Big model), improving state-of-the-art ensembles by over 2 BLEU.
+%         \item \textbf{WMT 2014 EN-FR}: 41.8 BLEU single-model state-of-the-art.
+%         \item \textbf{Constituency Parsing}: 92.7 F1 score on WSJ section 23 (semi-supervised setting).
+%     \end{dashlist}
+% \end{dashlist}
+
+
+\subsection{Vision Transformer (ViT)}
+\label{subsec:vit}
+
+\subsubsection{The ViT Architecture}
+The Vision Transformer (ViT) applies a standard Transformer encoder directly to 2D image recognition with minimal vision-specific modifications. Images are decomposed into a 1D sequence of flattened, fixed-size 2D patches, allowing visual data to be processed identically to token embeddings in natural language processing.
+
+\begin{dashlist}
+    \item \textbf{Architecture Components}:
+    \begin{dashlist}
+        \item \textbf{Patch Extraction and Embedding}: An input image is divided into non-overlapping spatial patches, flattened, and linearly projected into a constant latent embedding vector space.
+        \item \textbf{Classification Token}: Prepends a learnable \texttt{[class]} token embedding to the sequence of embedded patches. Its final representation at the output of the encoder serves as the image representation for classification.
+        \item \textbf{Positional Encodings}: 1D learnable position embeddings are added to patch embeddings to preserve spatial topology across sequence tokens.
+        \item \textbf{Transformer Encoder Blocks}: Composed of alternating layers of Multi-Head Self-Attention (MHSA) and MLP blocks (two linear layers with GELU non-linearity). Layer Normalization (LN) is applied before every block, and residual connections are applied after.
+    \end{dashlist}
+    
+    \item \textbf{Names and Shape Parameters}:
+    \begin{dashlist}
+        \item $(H, W)$ = height and width of the input image,
+        \item $C$ = number of image channels ($C = 3$ for RGB),
+        \item $(P, P)$ = spatial resolution of each image patch (e.g., $16 \times 16$ or $14 \times 14$),
+        \item $N = \frac{HW}{P^2}$ = number of patches (effective Transformer input sequence length),
+        \item $D$ = hidden dimension / latent vector size (768 for Base, 1024 for Large, 1280 for Huge),
+        \item $L$ = number of Transformer encoder layers (12 for Base, 24 for Large, 32 for Huge),
+        \item $h$ = number of attention heads (12 for Base, 16 for Large, 16 for Huge),
+        \item $d_{\text{mlp}}$ = hidden dimension of MLP blocks (3072 for Base, 4096 for Large, 5120 for Huge).
+    \end{dashlist}
+
+    \item \textbf{PATCH AND POSITION EMBEDDING INJECTION}: 
+    
+    \[
+    \mathbf{z}_0 = [\mathbf{x}_{\text{class}}; \, \mathbf{x}_p^1 \mathbf{E}; \, \mathbf{x}_p^2 \mathbf{E}; \, \dots; \, \mathbf{x}_p^N \mathbf{E}] + \mathbf{E}_{\text{pos}} , 
+    \quad \mathbf{E} \in \mathbb{R}^{(P^2 C) \times D}, \; \mathbf{E}_{\text{pos}} \in \mathbb{R}^{(N+1) \times D} .
+    \]
+
+    \item \textbf{TRANSFORMER ENCODER BLOCK COMPUTATION ($l = 1 \dots L$)}: 
+    
+    \[
+    \mathbf{z}'_l = \text{MHSA}(\text{LN}(\mathbf{z}_{l-1})) + \mathbf{z}_{l-1} ,
+    \]
+    \[
+    \mathbf{z}_l = \text{MLP}(\text{LN}(\mathbf{z}'_l)) + \mathbf{z}'_l .
+    \]
+
+    \item \textbf{CLASSIFICATION HEAD}: 
+    
+    \[
+    \mathbf{y} = \text{LN}(\mathbf{z}_L^0) .
+    \]
+    Uses an MLP with one hidden layer during pre-training and a single linear layer during fine-tuning.
+\end{dashlist}
+\subsubsection{Inductive Bias vs. Data Scale}
+\begin{dashlist}
+    \item \textbf{Lack of Inductive Bias}: Unlike CNNs (which have built-in translation equivariance, locality, and 2D spatial structures across every layer) ViT's self-attention layers are global. Spatial relations must be learned almost entirely from data.
+    \item \textbf{Scale Trumps Inductive Bias}: When trained on mid-sized datasets, ViT yields modest accuracy below CNNs of comparable size. However, when pre-trained on massive datasets, scale overcomes the lack of inductive bias and outperforms traditional CNNs.
+    \item \textbf{2D Position Interpolation}: Fine-tuning at higher resolutions keeps patch size $P$ fixed, resulting in larger sequence lengths $N$. Pre-trained 1D position embeddings are dynamically 2D-interpolated to match the expanded grid.
+\end{dashlist}
+
+% \subsubsection{Training Setup and Key Benchmark Results}
+% \begin{dashlist}
+%     \item \textbf{Optimizer Setup}: Pre-trained using Adam ($\beta_1 = 0.9, \beta_2 = 0.999$, weight decay $0.1$, batch size 4096). Fine-tuned using SGD with momentum ($0.9$) at higher image resolutions ($384 \times 384$ or $512 \times 512$).
+%     \item \textbf{Computational Efficiency}: Pre-training ViT requires substantially less compute than top-tier CNNs. For example, ViT-H/14 requires 2.5k TPUv3-core-days vs. 9.9k for BiT-L (ResNet152x4) and 12.3k for Noisy Student (EfficientNet-L2).
+%     \item \textbf{Key Benchmark Scores}:
+%     \begin{dashlist}
+%         \item \textbf{ImageNet-1k (validation)}: 88.55\% top-1 accuracy (ViT-H/14 pre-trained on JFT-300M).
+%         \item \textbf{ImageNet ReaL}: 90.72\% top-1 accuracy.
+%         \item \textbf{CIFAR-100}: 94.55\% top-1 accuracy.
+%         \item \textbf{VTAB Suite (19 tasks)}: 77.63\% overall mean accuracy across Natural, Specialized, and Structured vision tasks.
+%     \end{dashlist}
+% \end{dashlist}
+
+%-------------------------------------------------------------------------
+% VLA MODELS
+%-------------------------------------------------------------------------
+
+\subsection{\texorpdfstring{$\pi_0$}{pi\_0} - A VLA Flow Model for General Robot Control}
+\label{subsec:pi0}
+
+
+\subsubsection{Preliminaries: Conditional Flow Matching}
+
+\begin{dashlist}
+\item \textbf{Generative flow:}
+\begin{dashlist}
+\item Flow-based generative models learn a transformation from a simple distribution, typically Gaussian noise, to the target data distribution.
+\item Instead of directly learning a mapping from noise to data, a continuous flow defines a \textbf{velocity field} that specifies how a sample should move at each point in time:
+\(            \frac{d x^\tau}{d\tau} = v_\theta(x^\tau,\tau).
+       \)
+\item Starting from a sample $x^0$ drawn from the noise distribution, integrating this velocity field from $\tau=0$ to $\tau=1$ produces a sample $x^1$ from the learned data distribution.
+\end{dashlist}
+
+\item \textbf{Conditional Flow Matching (CFM):}
+\begin{dashlist}
+    \item CFM learns the velocity field by explicitly constructing a path between a noise sample $\epsilon$ and a target data sample $x$.
+    \item A simple linear interpolation is
+    \[
+        \mathbf{x}^\tau = \tau \mathbf{x} + (1-\tau)\epsilon,
+        \qquad
+        \epsilon \sim \mathcal{N}(0,I),
+    \]
+    where $\tau=0$ corresponds to pure noise and $\tau=1$ to the target sample.
+    \item The model is tranied to predict the velocity along this path
+    \[
+        \mathbf{v}_\theta(\mathbf{x}^\tau,\tau) \approx \frac{d \mathbf{x}^\tau}{d\tau} = \mathbf{x}-\epsilon.
+    \]
+    \item At inference, the target $x$ is unknown. The model starts from random noise $x^0$ and repeatedly follows the learned velocity field:
+    \[
+        \mathbf{x}^{\tau+\delta}
+        =
+        \mathbf{x}^\tau
+        +
+        \delta\,\mathbf{v}_\theta(\mathbf{x}^\tau,\tau).
+    \]
+    This numerical integration (Forward Euler) gradually transforms the noise into a generated sample.
+\end{dashlist}
+
+\item \textbf{Conditioning:}
+\begin{dashlist}
+    \item In conditional generation, the velocity field also receives the conditioning information $c$
+    \[
+        \mathbf{v}_\theta(\mathbf{x}^\tau,\tau,c).
+    \]
+    \item In $\pi_0$, the generated sample is an action chunk $A_t$, while the conditioning information is the current robot observation:
+    \[
+        \mathbf{o}_t = (\text{images},\text{language}, \text{robot state}) = [\mathbf{I}_t^1, \dots, \mathbf{I}_t^n, l_t, \mathbf{q}_t].
+    \]
+    Thus, the learned vector field becomes
+    \[
+        \mathbf{v}_\theta(\mathbf{A}_t^\tau,\mathbf{o}_t),
+    \]
+    allowing the model to generate actions appropriate for the current visual scene, language instruction, and robot state.
+\end{dashlist}
+
+\item \textbf{Application to robot actions:}
+\begin{dashlist}
+    \item $\pi_0$ generates an entire action chunk
+    \[
+        \mathbf{A}_t =
+        [a_t,a_{t+1},\ldots,a_{t+H-1}],
+        \qquad H=50,
+    \]
+    \item During training, a noisy action chunk is constructed as
+    \[
+        \mathbf{A} _t^\tau
+        =
+        \tau \mathbf{A}_t+(1-\tau)\epsilon,
+        \qquad
+        \epsilon\sim\mathcal{N}(0,I),
+    \]
+    \[
+        \text{data distribution: }\;\; p(\mathbf{A}_t |\mathbf{o}_t)
+    \]
+    \[
+        \mathbf{A}_t^\tau \sim q(\mathbf{A}_t^\tau|\mathbf{A}_t) = \mathcal{N}(\tau \mathbf{A}_t,\, (1-\tau)\,I)
+    \]
+    and the network learns the corresponding velocity
+    \[
+        \mathbf{v}_\theta(\mathbf{A}_t^\tau,\mathbf{o}_t)
+        \approx
+        \mathbf{u}(\mathbf{A}_t^\tau|\mathbf{A}_t) = 
+        \frac{d\mathbf{A}_t^\tau}{d\tau}=
+         \mathbf{A}_t-\epsilon,
+    \]
+    by optimizing the loss
+    \[
+        \mathcal{L}^\tau(\theta)=
+        \mathop{\mathbb{E}}_{\substack{\mathbf{A}_t \sim p(\cdot|\mathbf{o}_t), \\
+                            \mathbf{A}_t^\tau \sim q(\cdot|\mathbf{A}_t)}} 
+        [|| \mathbf{v}_\theta(\mathbf{A}_t^\tau,\mathbf{o}_t) - \mathbf{u}(\mathbf{A}_t^\tau|\mathbf{A}_t) ||^2].
+    \]
+    \item During inference, $\pi_0$ starts from
+    \[
+        \mathbf{A}_t^0\sim\mathcal{N}(0,I)
+    \]
+    and integrates the learned vector field from $\tau=0$ to $\tau=1$. The paper uses 10 forward-Euler integration steps, with $\delta=0.1$:
+    \[
+        \mathbf{A}_t^{\tau+\delta}
+        =
+        \mathbf{A}_t^\tau
+        +
+        \delta\,\mathbf{v}_\theta(\mathbf{A}_t^\tau,\mathbf{o}_t).
+    \]
+\end{dashlist}
+
+\end{dashlist}
+
+
+\subsubsection{Motivation and Overview}
+
+\begin{dashlist}
+
+\item \textbf{Goal:} develop a generalist robot policy that can perform many different and dexterous tasks across different robots. 
+% The main challenges are:
+% \begin{dashlist}
+%     \item \textbf{Data:} robot data is expensive and limited.
+%     \item \textbf{Generalization:} the model should transfer knowledge between tasks, objects, environments, and robots.
+%     \item \textbf{Robustness:} the robot should be able to recover from mistakes and unexpected situations.
+% \end{dashlist}
+
+\item The key idea is to build a \textbf{Vision-Language-Action (VLA)} model on top of a pre-trained \textbf{Vision-Language Model (VLM)}. This provides Internet-scale visual and semantic knowledge, which is then combined with robot-specific data and actions.
+
+\item $\pi_0$ uses \textbf{cross-embodiment training}: data from different robots is combined into a single model, including single-arm, dual-arm, and mobile manipulators. 
+% This allows the model to learn more diverse behaviors and potentially transfer knowledge between different robot platforms.
+
+\item To represent precise and complex robot actions, $\pi_0$ uses \textbf{action chunking + flow matching}. Instead of generating one discrete action at a time, the model predicts a chunk of continuous future actions. 
+% This allows control frequencies of up to \textbf{50 Hz}.
+
+\item The training follows a \textbf{pre-training/post-training} approach:
+\begin{dashlist}
+    \item \textbf{Pre-training:} use a very large and diverse dataset to learn general physical capabilities.
+    \item \textbf{Post-training:} use smaller, high-quality, task-specific datasets to learn efficient and fluent strategies for particular tasks.
+\end{dashlist}
+
+
+\end{dashlist}
+
+\subsubsection{\texorpdfstring{$\pi_0$}{pi\_0} Architecture}
+
+\begin{dashlist}
+
+\item \textbf{Backbone:} $\pi_0$ is based on the PaliGemma VLM. Images are encoded and projected into the same embedding space as language tokens. Robot-specific inputs and outputs are then added to the VLM.
+
+\item \textbf{Inputs:}
+\begin{dashlist}
+    \item Multiple RGB images from the robot cameras $\mathbf{I}_t^1, \dots, \mathbf{I}_t^n$.
+    \item A natural-language command $l_t$.
+    \item The robot's proprioceptive state (joint angles) $\mathbf{q}_t$.
+    \item A noisy chunk of future actions $\mathbf{A}_t^\tau$.
+\end{dashlist}
+The aggreagated inputs form the observation
+\[
+\mathbf{o}_t = [\mathbf{I}_t^1, \dots, \mathbf{I}_t^n, l_t, \mathbf{q}_t].
+\]
+
+
+\item \textbf{Outputs:} a chunk of $H=50$ future continuous actions
+\[
+    \mathbf{A}_t = [a_t,a_{t+1},\ldots,a_{t+H-1}].
+\]
+
+\item \textbf{Action Expert:} a second, smaller set of transformer weights specialized for the robot state and action tokens. It can be viewed similarly to a two-expert mixture:
+\begin{dashlist}
+    \item VLM weights process image and language information.
+    \item Action-expert weights process robotics-specific state and action information.
+\end{dashlist}
+The whole model could be seen as a decoder-only transformer, where only the output related to the action expert is considered ($\mathbf{v}_\theta(\mathbf{A}_t^\tau,\mathbf{o}_t)$).
+
+\item \textbf{Flow Matching:} instead of predicting discrete action tokens, $\pi_0$ models the continuous distribution of possible action chunks.
+
+During training, Gaussian noise is added to the true action chunk:
+\[
+    \mathbf{A}_t^\tau = \tau \mathbf{A}_t + (1-\tau)\epsilon,
+    \qquad \epsilon\sim\mathcal{N}(0,I).
+\]
+The model learns a vector field that transforms the noisy actions into the target actions.
+
+\item At inference, the model starts from random noise and integrates the learned vector field from $\tau=0$ to $\tau=1$ ($\delta=0.1$) with 10 Forward-Euler integration steps.
+
+\item The action expert uses \textbf{bidirectional attention} between action tokens, allowing all actions in the predicted chunk to interact with each other.
+
+\item \textbf{blockwise causal attention mask}:Within each block attention is bidirectional, while a block cannot attend to future blocks. The "blocks" are: (1) image + language tokens; (2) robot state tokens; (3) action tokens.
+
+\item \textbf{Model size:} PaliGemma has 3B parameters and the action expert adds 300M parameters, giving a total of approximately 3.3B parameters. A smaller baseline, $\pi0$-small, has 470M parameters and does not use VLM pre-training.
+
+\end{dashlist}
+
+\subsubsection{Training and Dataset}
+
+\begin{dashlist}
+
+\item The pre-training mixture combines the authors' dexterous manipulation data with open-source datasets such as OXE, Bridge v2 and DROID.
+
+\item The authors' dataset: 903M timesteps from 7 robot configurations and 68 tasks.
+
+% \item The complete pre-training data corresponds to approximately 10,000 hours of robot data. The open-source datasets provide additional diversity in objects and environments.
+
+\item Different robots have different action and state dimensions. $\pi_0$ uses a common maximum dimensionality of 18 and zero-pads robots with smaller action/state spaces. Missing camera inputs are similarly masked.
+
+\item The pre-training data is intentionally diverse, even if lower quality. This teaches the model how to deal with different situations and recover from mistakes.
+
+\item Post-training uses a smaller, high-quality dataset for a specific task. The amount of data depends on the task.
+
+\item For some complex tasks, a separate \textbf{"high-level VLM policy"} provides intermediate language commands. For example, instead of simply receiving ``bus the table'', the high-level model can produce commands such as ``pick up the napkin'' or ``throw the napkin into the trash''.
+
+\end{dashlist}
+
+\subsubsection{Evaluation}
+
+\begin{dashlist}
+% \item The experiments evaluate four main aspects:
+% \begin{dashlist}
+%     \item Performance of the pre-trained model without post-training.
+%     \item Ability to follow language commands.
+%     \item Ability to learn new dexterous tasks through fine-tuning.
+%     \item Ability to perform complex multi-stage tasks.
+% \end{dashlist}
+\item \textbf{Out-of-box evaluation:} the pre-trained model is compared with OpenVLA, Octo, and $\pi0$-small. The full $\pi_0$ model and a compute-parity version outperform the evaluated baselines on the reported out-of-box tasks. The comparison highlights two important design choices:
+\begin{dashlist}
+    \item \textbf{Action chunking + flow matching} allows high-frequency and complex continuous actions.
+    \item \textbf{VLM pre-training} improves the model's ability to understand language and generalize across tasks.
+\end{dashlist}
+\item \textbf{Language following:} $\pi_0$ is evaluated with:
+\begin{dashlist}
+    \item only the overall task command;
+    \item intermediate commands supplied by a human;
+    \item intermediate commands generated autonomously by a high-level VLM.
+\end{dashlist}
+The VLM-initialized $\pi_0$ shows better language-following performance than $\pi0$-small.
+\item \textbf{Learning new tasks:} $\pi_0$ is fine-tuned on tasks ranging from similar to the pre-training tasks (e.g. stacking bowls) to substantially different tasks (e.g. replacing a paper towel roll or manipulating objects in a drawer). Pre-training generally provides a larger benefit when the downstream task is similar to the pre-training distribution and can provide substantial improvements with limited fine-tuning data.
+\item \textbf{Complex multi-stage tasks:} after fine-tuning, $\pi_0$ performs tasks lasting several minutes and requiring many individual behaviors.
+% including:
+% \begin{dashlist}
+%     \item folding laundry;
+%     \item unloading a dryer;
+%     \item bussing a table with unseen objects;
+%     \item assembling a cardboard box;
+%     \item packing food into a box;
+%     \item packing eggs into a carton.
+% \end{dashlist}
+The hardest tasks benefit particularly strongly from pre-training. Training only on the task-specific data can produce a more limited policy, while pre-training provides a broader set of behaviors and recovery strategies.
+\end{dashlist}
+
+% \subsubsection{Main Takeaways}
+
+% \begin{dashlist}
+% \item \textbf{VLM $\rightarrow$ VLA:} starting from a pre-trained VLM transfers Internet-scale visual and language knowledge to robot control.
+% \item \textbf{Cross-embodiment training:} combining data from many robots allows a single model to operate across different embodiments and action spaces.
+% \item \textbf{Flow matching:} continuous flow matching is used instead of autoregressive action discretization, allowing high-frequency generation of continuous action chunks.
+% \item \textbf{Pre-training + post-training:} diverse pre-training provides generalization and recovery behaviors, while high-quality post-training teaches the model efficient and fluent execution of specific tasks.
+% \item \textbf{Scale matters:} $\pi_0$ is trained on approximately 10,000 hours of robot data, 7 robot configurations, and 68 tasks, showing the importance of large and diverse datasets for robot foundation models.
+% \item \textbf{Main limitation:} it is still unclear how the pre-training dataset should be composed and weighted. Not all tasks work reliably, and it is unclear how much and what kind of data is required for near-perfect performance.
+% \item It is also still unclear how much \textbf{positive transfer} is obtained by combining very different robots and tasks, and whether the same approach can generalize to substantially different domains such as autonomous driving, navigation, or legged locomotion.
+
+% \end{dashlist}
+
+
+\subsection{SmolVLA}
+\label{subsec:smolvla}
+
+%-------------------------------------------------------------------------
+% ARCHITECTURES FOR VLA
+%-------------------------------------------------------------------------
+\subsection{VLA models: Identifying the Action Generation Bottleneck for Edge AI Architectures}
+\label{subsec:vla-bottleneck}
+
+\subsection{VLA models: Heterogeneous Edge Accelerators}
+\label{subsec:vla-heterogeneous}
