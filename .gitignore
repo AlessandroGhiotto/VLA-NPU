@@ -1,10 +1,8 @@
 # FOLDERS
-.vscode/
-.vscode/**
-papers/
-papers/**
-papers-intro/
-papers-intro/**
+/papers/
+/papers/**
+/papers-intro/
+/papers-intro/**
 
 # LaTeX build artifacts
 *.aux

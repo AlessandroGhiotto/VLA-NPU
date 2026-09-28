@@ -108,8 +108,15 @@ To fairly evaluate all the design trade-offs, ALL the following metrics should b
 
 \subsubsection{Designing DNN Accelerators}
 
+\begin{figure}[tb]
+\centering
+\includegraphics[width=0.8\textwidth]{dnns-4.1.png}
+\caption{Temporal and Spatial architecture, credits \cite{sze2020efficient}}
+\label{fig:dnn41}
+\end{figure}
+
 \begin{dashlist}
-    \item 
+    \item Two kinds of architecture, depicted in Fig.~\ref{fig:dnn41}
     \begin{dashlist}
         \item \textbf{Temporal architecture:} centralized control of many ALUs, which can only fetch data from the main memory, they can't communicate with each other. SIMD/SIMT for improving parallelism.
         \item \textbf{Spatial architecture:} allows for communication between ALUs. PE: each ALU can have it's own control logic, and a local memory (scratchpad) or a register file.
@@ -147,7 +154,14 @@ To fairly evaluate all the design trade-offs, ALL the following metrics should b
     \end{dashlist}
     A dataflow describe this aspects of a loop nest: (1) order of the loops (which data types e prioritize); (2) number of loops for each data dimension (desribe the tiling); (3) whether each of the loops is temporal or spatial.
 
-    \item \textbf{DATAFLOW TAXONOMY.}
+    \begin{figure}[tb]
+    \centering
+    \includegraphics[width=0.7\textwidth]{dnns-5.15.png}
+    \caption{Different dataflow architectures, credits \cite{sze2020efficient}}
+    \label{fig:dnn515}
+    \end{figure}
+
+    \item \textbf{DATAFLOW TAXONOMY.} See Fig.~\ref{fig:dnn515}.
     \begin{dashlist}
         \item \textbf{Weight Stationary (WS):} maximize the reuse of weights, while the ifmaps are broadcast and the psums are spatially accumulated.
         \item \textbf{Output Stationary (OS):} minimize the energy consumption of reading and writing the psums by accumulating them in the PE. While the ifmaps are streamed and the weights are broadcast.
@@ -166,8 +180,22 @@ To fairly evaluate all the design trade-offs, ALL the following metrics should b
         
         \textbf{Decouple} the load request initiator and the response receiver. A DMA engine is responsible for pushing data into FUs' buffers
         
-        \item \textbf{Explicit Decoupled Data Orchestration (EDDO).} An exampler are FIFO buffers, but they are not flexible enough. \textit{Buffets} store values in a circular buffer and allows the following operations: push a value; read the head value; read the value at a given offset from the head; read and update a value at a given offest; remove a given number of entries (shrink). Buffets are composable.
+        \begin{figure}[tb]
+        \centering
+        \includegraphics[width=0.7\textwidth]{dnns-5.30.png}
+        \caption{Buffet, credits \cite{sze2020efficient}}
+        \label{fig:dnn530}
+        \end{figure}
+        
+        \item \textbf{Explicit Decoupled Data Orchestration (EDDO).} An exampler are FIFO buffers, but they are not flexible enough. \textit{Buffets} (see Fig.~\ref{fig:dnn530}) store values in a circular buffer and allows the following operations: push a value; read the head value; read the value at a given offset from the head; read and update a value at a given offest; remove a given number of entries (shrink). Buffets are composable.
     \end{dashlist} 
+
+    \begin{figure}[tb]
+    \centering
+    \includegraphics[width=1\textwidth]{dnns-5.32.png}
+    \caption{Connectivity, credits \cite{sze2020efficient}}
+    \label{fig:dnn532}
+    \end{figure}
 
     \item \textbf{FLEXIBLE NOC DESIGN.} The NoC should support the data delivery patterns of various dataflows. It should consider: (1) high parallelism; (2) exploit data reuse; (3) can be scaled.
     
@@ -177,13 +205,21 @@ To fairly evaluate all the design trade-offs, ALL the following metrics should b
         Temporal accumulation $\Rightarrow$ OS
     \end{center}
 
-    The varying amount of data reuse for each type across layers or models pose a challenge to the NoC design.
+    The varying amount of data reuse for each type across layers or models pose a challenge to the NoC design. The kind of the connectivity (see Fig.~\ref{fig:dnn532}) determines the cost and amount of reuse of the NoC.
 
     \textbf{Hierarchical Mesh Network:} we have an all-to-all network within the scope of a cluster, then the clusters are further connected with a mesh network. This allows for an high connectivity, but it is also schelable.
 \end{dashlist}
 
 \subsubsection{Operation Mapping on Specialized HW}
-Mapping involves the placement and scheduling in sapce and time of every operation. Steps: (1) determine the datawflow; (2) determine the data tile sized; (3) bind the operations to the HW.
+
+\begin{figure}[tb]
+\centering
+\includegraphics[width=0.75\textwidth]{dnns-6.2.png}
+\caption{Mapping a DNN model on specialized HW, credits \cite{sze2020efficient}}
+\label{fig:dnn62}
+\end{figure}
+
+Mapping involves the placement and scheduling in space and time of every operation. Steps: (1) determine the datawflow; (2) determine the data tile sized; (3) bind the operations to the HW. See Fig.~\ref{fig:dnn62}
 \begin{dashlist}
     \item Mapping = selecting and parametrizing loop nests.
     \item Architecture: dataflow, buffer sizes (processors' RF) and NoC connectivity. Microarchitecture: detalied informations.
@@ -213,13 +249,19 @@ Mapping involves the placement and scheduling in sapce and time of every operati
         \item \textbf{Network pruning.} (1) Weight removal: we decide which weights we want to remove by scopring, grouping and ranking them. (2) Fine-tuning: update the values ofo the remaining weights. (3) Scheduling: how many weights to prune in each iteration.
     \end{dashlist}
     
-    \item \textbf{TENSORS.}     
+    \item \textbf{TENSORS.}
+    \begin{figure}[tb]
+    \centering
+    \includegraphics[width=0.8\textwidth]{dnns-8.19.png}
+    \caption{Fiber-tree representation, credits \cite{sze2020efficient}}
+    \label{fig:dnn819}
+    \end{figure} 
     \begin{dashlist}
         \item There is a conseptual partitioning between the activity on the tensors (dataflow) and their representation.
         \item Tree-based tensor representation (\textit{Fiber-tree} representation).
         \item In practice the order of the ranks matters, since it can affect the cost of access.
         \item The axis of the matrix are called \textit{ranks}, the individual elements of a rank are called \textit{coordinated}.
-        \item At each coordinate of a rank we have a value (\textit{payload}), this value is a \textit{fiber} for intermediate ranks, and it's just a value for the lowest ranks. A giber is a set of coordinates and their associated payloads.
+        \item At each coordinate of a rank we have a value (\textit{payload}), this value is a \textit{fiber} for intermediate ranks, and it's just a value for the lowest ranks. A fiber is a set of coordinates and their associated payloads. See Fig.~\ref{fig:dnn819}.
         \item Implicit: the position serve as coordinate, fibers are 1-D arrays. Explicit: we have also the position, compressed representation of fibers as a coordinate/payload list.
         \item Uncompressed or Compressed. Run-lenght encoding, binary mask\dots
     \end{dashlist}
@@ -295,9 +337,16 @@ To achieve efficiency we may also want to design an efficient DNN network archit
 \subsection{TPUs}
 \label{subsec:tpus}
 
+\begin{figure}[tb]
+\centering
+\includegraphics[width=0.7\textwidth]{1.3-tpus.png}
+\caption{TPU architecture, credits \cite{jouppi2017datacenter}}
+\label{fig:tpu}
+\end{figure}
+
 \subsubsection{TPU Architecture}
 \begin{dashlist}
-    \item The TPU was designed as a coprocessor, that you can plug into existing servers like a GPU; but unlike a GPU, the host server sends TPU instructions rather than fetching them itself. The goal was to run whole inference models in the TPU, to reduce interaction with the host CPU, and to be flexible enough to match future DNN needs. The target are inference apps, which favors latency over throughput. Designed for dense matrixes.
+    \item The TPU (see Fig.~\ref{fig:tpu}) was designed as a coprocessor, that you can plug into existing servers like a GPU; but unlike a GPU, the host server sends TPU instructions rather than fetching them itself. The goal was to run whole inference models in the TPU, to reduce interaction with the host CPU, and to be flexible enough to match future DNN needs. The target are inference apps, which favors latency over throughput. Designed for dense matrixes. 
     \item \textbf{Blocks:}
     \begin{dashlist}
         \item \textit{Matrix Multiply Unit (MMU).} It contains 256x256 MACs that can perform 8-b multiply-and-adds on integers.
@@ -360,6 +409,14 @@ To achieve efficiency we may also want to design an efficient DNN network archit
 
 \subsection{Attention is All You Need}
 \label{subsec:transformer}
+
+\begin{figure}[tb]
+\centering
+\includegraphics[width=0.45\textwidth]{2.1-transformers.png}
+\caption{Transformer architecture architecture, credits \cite{dosovitskiy2020image}}
+\label{fig:transformer}
+\end{figure}
+
 
 \subsubsection{The Transformer Architecture}
 The Transformer is a sequence transduction model (\textit{seq2seq}) relying entirely on self-attention mechanisms, dispensing with recurrent and convolutional layers entirely. It adopts an auto-regressive encoder-decoder structure.
@@ -446,8 +503,16 @@ Self-attention layers connect all positions with $O(1)$ sequential operations, m
 \subsection{Vision Transformer (ViT)}
 \label{subsec:vit}
 
+\begin{figure}[tb]
+\centering
+\includegraphics[width=0.8\textwidth]{2.2-vit.png}
+\caption{ViT architecture, credits \cite{dosovitskiy2020image}}
+\label{fig:vit}
+\end{figure}
+
+
 \subsubsection{The ViT Architecture}
-The Vision Transformer (ViT) applies a standard Transformer encoder directly to 2D image recognition with minimal vision-specific modifications. Images are decomposed into a 1D sequence of flattened, fixed-size 2D patches, allowing visual data to be processed identically to token embeddings in natural language processing.
+The Vision Transformer (ViT) applies a standard Transformer encoder directly to 2D image recognition with minimal vision-specific modifications. Images are decomposed into a 1D sequence of flattened, fixed-size 2D patches, allowing visual data to be processed identically to token embeddings in natural language processing. See Fig.~\ref{fig:vit}
 
 \begin{dashlist}
     \item \textbf{Architecture Components}:
@@ -520,8 +585,14 @@ The Vision Transformer (ViT) applies a standard Transformer encoder directly to 
 \subsection{\texorpdfstring{$\pi_0$}{pi\_0} - A VLA Flow Model for General Robot Control}
 \label{subsec:pi0}
 
-
 \subsubsection{Preliminaries: Conditional Flow Matching}
+
+\begin{figure}[tb]
+\centering
+\includegraphics[width=0.8\textwidth]{3.1-CFM.png}
+\caption{Flow matching visuals, credits \url{https://dl.heeere.com/conditional-flow-matching/blog/conditional-flow-matching/}}
+\label{fig:cfm}
+\end{figure}
 
 \begin{dashlist}
 \item \textbf{Generative flow:}
@@ -628,8 +699,14 @@ The Vision Transformer (ViT) applies a standard Transformer encoder directly to 
 
 \end{dashlist}
 
-
 \subsubsection{Motivation and Overview}
+
+\begin{figure}[tb]
+\centering
+\includegraphics[width=1\textwidth]{3.1-pi0.png}
+\caption{$\pi_0$ architecture, credits \cite{black2024pi0}}
+\label{fig:pi0}
+\end{figure}
 
 \begin{dashlist}
 
@@ -662,7 +739,7 @@ The Vision Transformer (ViT) applies a standard Transformer encoder directly to 
 
 \begin{dashlist}
 
-\item \textbf{Backbone:} $\pi_0$ is based on the PaliGemma VLM. Images are encoded and projected into the same embedding space as language tokens. Robot-specific inputs and outputs are then added to the VLM.
+\item \textbf{Backbone:} $\pi_0$ is based on the PaliGemma VLM. Images are encoded and projected into the same embedding space as language tokens. Robot-specific inputs and outputs are then added to the VLM. See Fig.~\ref{fig:pi0}
 
 \item \textbf{Inputs:}
 \begin{dashlist}
@@ -781,8 +858,15 @@ The hardest tasks benefit particularly strongly from pre-training. Training only
 \subsection{SmolVLA}
 \label{subsec:smolvla}
 
+\begin{figure}[tb]
+\centering
+\includegraphics[width=0.8\textwidth]{3.2-smolvla.png}
+\caption{SmolVla architecture, credits \cite{smolvla2025}}
+\label{fig:smolvla}
+\end{figure}
+
 \subsubsection{Model Architecture}
-A pretrained VLM process the state inputs, and its output features are fed to the action expert wich produces continuous actions.
+A pretrained VLM process the state inputs, and its output features are fed to the action expert wich produces continuous actions. See Fig.~\ref{fig:smolvla}
 \begin{dashlist}
     \item \textbf{VLM.} we have a language decoder which is fed by a sequence of tokens, which are obtained from the input images, instruction, and robot state.
     \begin{dashlist}
@@ -923,6 +1007,14 @@ and so the new queue will be $\mathbf{A_{t+1}} \leftarrow \text{AGGR}[\mathbf{A}
 %-------------------------------------------------------------------------
 \subsection{VLA models: Identifying the Action Generation Bottleneck for Edge AI Architectures}
 \label{subsec:vla-bottleneck}
+
+\begin{figure}[tb]
+\centering
+\includegraphics[width=0.8\textwidth]{4.1-bottleneck.png}
+\caption{MolmoAct diagram, credits \cite{vlabottleneck2026}}
+\label{fig:bottleneck}
+\end{figure}
+
 \subsubsection{Preliminaries: MolmoAct}
 
 Unlike $\pi_0$ and SmolVLA that directly map multimodal inputs to continuous actions via a vector field, MolmoAct is a \textbf{Action Reasoning Model (ARM)}. The inference has three stages:
@@ -935,7 +1027,7 @@ Unlike $\pi_0$ and SmolVLA that directly map multimodal inputs to continuous act
 \subsubsection{VLA Models}
 \begin{dashlist}
     \item \textbf{Vision Encoder.} Get features embeddings by processing raw pixel data. The embeddings are projected to match the embedding space of the next component.
-    \item \textbf{Reasoning.} A decoder-only transformers takes as input the visual and textual tokens and it may generate intermediate outputs such as "Chain-of-Thought" reasoning or spatial waypoint.
+    \item \textbf{Reasoning.} A decoder-only transformers takes as input the visual and textual tokens and it may generate intermediate outputs such as "Chain-of-Thought" reasoning or spatial waypoint. See Fig.~\ref{fig:bottleneck}.
     \item \textbf{Action Transformer.} Generate motor-commands
 \end{dashlist}
 
@@ -959,3 +1051,12 @@ Unlike $\pi_0$ and SmolVLA that directly map multimodal inputs to continuous act
 
 \subsection{VLA models: Heterogeneous Edge Accelerators}
 \label{subsec:vla-heterogeneous}
+
+% \begin{figure}[tb]
+% \centering
+% \includegraphics[width=1\textwidth]{3.1-pi0.png}
+% \caption{$\pi_0$ architecture, credits \cite{black2024pi0}}
+% \label{fig:pi0}
+% \end{figure}
+
+% See Fig.~\ref{fig:tpu}
