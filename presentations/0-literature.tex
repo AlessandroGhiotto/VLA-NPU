@@ -11,12 +11,33 @@
 \usepackage{graphicx}
 \usepackage{tikz}
 
+% Outline
+\AtBeginSection[]
+{
+\begin{frame}[plain,noframenumbering]
+\frametitle{Outline}
+\begin{columns}[T]
+    \begin{column}{0.01\textwidth}
+        
+    \end{column}
+    \begin{column}{0.95\textwidth}
+        \tableofcontents[currentsection,
+                        %currentsubsection,
+                        %hideothersubsections, 
+                        %sectionstyle=show/shaded, 
+                        %subsectionstyle=show/shaded%/hide
+                 ]
+    \end{column}
+\end{columns}
+\end{frame}
+}
+
 % Graphic search paths: checks figures/, shared/, theme img, and current dir
 \graphicspath{{../figures/}{../figures/polimi/}{../figures/papers/}{shared/}{./}}
 
 % Project Metadata
 \title[Edge NPU for VLAs]{Workload-Driven Exploration of Edge NPU Architectures for Vision-Language-Action Models}
-\subtitle{Progress Meeting \#00 --- Project Kickoff \& Scope}
+\subtitle{00 --- Literature Study}
 \author{Alessandro Ghiotto}
 \institute{Politecnico di Milano --- MSc in High Performance Computing Engineering}
 \date{25 September 2026}
@@ -29,11 +50,16 @@
     \titlepage
 \end{frame}
 
-\begin{frame}{Outline}
-    \tableofcontents
-\end{frame}
+% DONE AUTOMATICALLY
+% \begin{frame}{Outline}
+%     \tableofcontents
+% \end{frame}
 
+% =================================================
+% Efficeint processing of DNNs
+% =================================================
 \section{Foundations of DNN accelerators}
+\subsection{Efficient Processing of DNNs}
 \begin{frame}{Temporal vs. Spatial Architectures}
     \begin{columns}[c]
         \begin{column}{0.5\textwidth}
@@ -63,6 +89,7 @@
         \end{column}
     \end{columns}
 \end{frame}
+
 \begin{frame}{Dataflows \& NoC Connectivity}
     \begin{columns}[c]
         \begin{column}{0.65\textwidth}
@@ -87,5 +114,596 @@
     \end{columns}
 \end{frame}
 
+% =================================================
+% EYERISS
+% =================================================
+\subsection{Eyeriss}
+\begin{frame}{Eyeriss: Row Stationary Dataflow}
+    \begin{columns}[c]
+        \begin{column}{0.55\textwidth}
+            \begin{itemize}
+                \item \textbf{Row Stationary (RS) Objective}:
+                \begin{itemize}
+                    \item Minimizes overall data movement energy across all data types simultaneously (ifmaps, weights, psums).
+                \end{itemize}
+                \vspace{0.5em}
+                \item \textbf{1-D Convolution Primitive}:
+                \begin{itemize}
+                    \item Maps 1 row of weights + 1 row of ifmaps to 1 PE.
+                    \item Row pairs stay stationary in local scratchpad (spad).
+                \end{itemize}
+                \vspace{0.5em}
+                \item \textbf{2-D PE Set}:
+                \begin{itemize}
+                    \item Reuses filter rows horizontally, ifmap rows diagonally.
+                    \item Accumulates partial sums (psums) vertically.
+                \end{itemize}
+            \end{itemize}
+        \end{column}
 
+        \begin{column}{0.45\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{1.2-rowstationary.png}
+                \caption{RS Dataflow}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Eyeriss: Architecture}
+    \begin{columns}[c]
+        \begin{column}{0.55\textwidth}
+            \begin{itemize}
+                \item \textbf{4-Level Memory Hierarchy}:
+                \begin{itemize}
+                    \item DRAM $\to$ Global Buffer (GLB) $\to$ NoC $\to$ PE spads.
+                \end{itemize}
+                \vspace{0.5em}
+                \item \textbf{Custom NoC Delivery}:
+                \begin{itemize}
+                    \item Global Input Network for 1-cycle multicast (GLB \textrightarrow PEs).
+                    \item Global Output Network for storing psums (PEs \textrightarrow GLB)
+                    \item Local Network for vertical psum accumulation.
+                \end{itemize}
+                \vspace{0.5em}
+                \item \textbf{Exploiting sparsity}:
+                \begin{itemize}
+                    \item \textit{Run-Length Compression (RLC)} saves DRAM bandwidth.
+                    \item \textit{Data Gating} check if ifmaps are zero to save power.
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.55\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{1.2-eyeriss.png}
+                \caption{Eyeriss System Architecture}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% =================================================
+% TPU
+% =================================================
+\subsection{TPU}
+\begin{frame}{TPU: Architecture \& Systolic Array}
+    \begin{columns}[c]
+        \begin{column}{0.55\textwidth}
+            \begin{itemize}
+                \item \textbf{Coprocessor Design}:
+                \begin{itemize}
+                    \item PCIe-attached accelerator; host CPU dispatches CISC instructions (\texttt{MatrixMultiply}, \texttt{Activate} \dots).
+                \end{itemize}
+                \vspace{0.5em}
+                \item \textbf{Matrix Multiply Unit (MMU)}:
+                \begin{itemize}
+                    \item $256 \times 256$ 8-bit INT MACs.
+                    \item 24 MiB Unified Buffer (UB) for activations; 4 MiB Accumulators.
+                \end{itemize}
+                \vspace{0.5em}
+                \item \textbf{Systolic Execution}:
+                \begin{itemize}
+                    \item Diagonal wavefront dataflow reduces expensive SRAM/UB read-writes.
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.45\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{1.3-tpus.png}
+                \caption{TPU Block Diagram \& Datapath}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{TPU: Roofline Analysis}
+    \begin{columns}[c]
+        \begin{column}{0.55\textwidth}
+            \begin{itemize}
+                \item \textbf{Roofline Dynamics}:
+                \begin{itemize}
+                    \item Ridge point far to the right due to low bandwidth and high peak performance.
+                    \item MLPs/LSTMs are memory-bound; CNNs are compute-bound.
+                \end{itemize}
+                \vspace{0.5em}
+                \item \textbf{No sophisticated features}:
+                \begin{itemize}
+                    \item No O-o-O execution, branch prediction, or caches.
+                    \item Meets 99th-percentile response-time limits at high batch sizes where CPUs/GPUs fail.
+                \end{itemize}
+                \vspace{0.5em}
+                \item \textbf{Efficiency}: $15\times$--$30\times$ faster than Haswell CPU/K80 GPU with $30\times$--$80\times$ higher Perf/Watt.
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.45\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{1.3-tpu-roofline.png}
+                \caption{TPU Roofline Model (log-log)}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% =================================================
+% Transformer
+% =================================================
+\section{Transfomers}
+\begin{frame}{Transformer Architecture}
+    \vspace{-1cm}
+    \begin{columns}[c]
+        \begin{column}{0.48\textwidth}
+            \begin{itemize}
+                \item \textbf{Seq2Seq Encoder-Decoder}: Replaces RNNs/CNNs entirely with self-attention.
+                \item Use attention for learning the \textbf{representation}.
+                \item \textbf{Key Mechanism}:
+                \begin{itemize}
+                    \item Scaled Dot-Product Attention:
+                    \[
+                    \text{Softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+                    \]
+                    \item $O(1)$ sequential operations.
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.52\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[height=0.7\textheight]{2.1-transformers.png}
+                \caption{Transformer Architecture}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Vision Transformer -- ViT}
+    \begin{columns}[c]
+        \begin{column}{0.48\textwidth}
+            \begin{itemize}
+                \item \textbf{Images as Words}: Splits 2D images into flattened 1D spatial patch embeddings ($P \times P$, e.g., $16 \times 16$).
+                \vspace{0.8em}
+                \item \textbf{Inductive Bias vs. Scale}:
+                \begin{itemize}
+                    \item Lacks CNN 2D spatial locality/translation invariance.
+                    \item Pre-training on massive data overcomes lack of inductive bias.
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.52\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.9\textwidth]{2.2-vit.png}
+                \caption{Vision Transformer (ViT)}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% =================================================
+% \pi_0 
+% =================================================
+\section{VLA Models}
+\subsection{Conditional Flow Matching}
+\begin{frame}{Preliminaries: Conditional Flow Matching (CFM)}
+    \begin{columns}[c]
+        \begin{column}{0.6\textwidth}
+        \begin{itemize}
+            \item $\pi_0$ generates an entire action chunk 
+            $\mathbf{A}_t = [a_t,\ldots,a_{t+H-1}]$
+            \item \textbf{Training:} a noisy action chunk is constructed as
+            $
+                \mathbf{A} _t^\tau
+                =
+                \tau \mathbf{A}_t+(1-\tau)\epsilon,\,
+                \epsilon\sim\mathcal{N}(0,I),
+            $
+            and the network learns the corresponding velocity
+            \[
+                \mathbf{v}_\theta(\mathbf{A}_t^\tau,\mathbf{o}_t)
+                \approx
+                \mathbf{u}(\mathbf{A}_t^\tau|\mathbf{A}_t) = 
+                \frac{d\mathbf{A}_t^\tau}{d\tau}=
+                \mathbf{A}_t-\epsilon,
+            \]
+            by optimizing the loss
+            \[
+                \mathcal{L}^\tau(\theta)=
+                \mathop{\mathbb{E}}_{\mathbf{A}_t, \mathbf{A}_t^\tau} 
+                \Bigl[|| \mathbf{v}_\theta(\mathbf{A}_t^\tau,\mathbf{o}_t) - \mathbf{u}(\mathbf{A}_t^\tau|\mathbf{A}_t) ||^2\Bigr].
+            \]
+            \item \textbf{Inference:} $\pi_0$ starts from $\mathbf{A}_t^0\sim\mathcal{N}(0,I)$
+            and integrates the learned vector field from $\tau=0$ to $\tau=1$:
+            \[
+                \mathbf{A}_t^{\tau+\delta}
+                =
+                \mathbf{A}_t^\tau
+                +
+                \delta\,\mathbf{v}_\theta(\mathbf{A}_t^\tau,\mathbf{o}_t).
+            \]
+        \end{itemize}
+        \end{column}
+
+        \begin{column}{0.45\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{3.1-CFM.png}
+                \caption{Conditional Flow Matching Path ($\tau \in$)}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\subsection{\texorpdfstring{$\pi_0$}{pi\_0}}
+\begin{frame}{$\pi_0$: Architecture}
+    \begin{columns}[c]
+        \begin{column}{0.55\textwidth}
+            \begin{itemize}
+                \item \textbf{Inputs}: $\mathbf{o}_t = [I_t^{1:n} (\text{images}),\, \ell_t (\text{label}),\, \mathbf{q}_t (\text{state})]$
+                \item \textbf{Output}: chunk of actions $\mathbf{A}_t = [a_t,\ldots,a_{t+H-1}]$.
+                \item \textbf{Architecture}:
+                \begin{itemize}
+                    \item VLM process images and the instruction.
+                    \item Action Expert process robots state and noisy action.
+                \end{itemize}
+                \vspace{0.4em}
+                \item \textbf{Blockwise Causal Attention}:
+                \begin{itemize}
+                    \item Block 1: $[I_t^{1:n}, \ell_t]$, Block 2: $[q_t]$, Block 3: $[A_t^\tau]$.
+                    \item Bidirectional within blocks; causal across blocks.
+                    \item Attention between the VLM and the action expert allows for the conditioning on input data.
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.5\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{3.1-pi0-small.png}
+                \caption{$\pi_0$ Architecture}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{$\pi_0$: Training}
+    \begin{columns}[c]
+        \begin{column}{0.55\textwidth}
+            \begin{itemize}
+                \item \textbf{Efficient KV-Cached Inference}:
+                \begin{itemize}
+                    \item Compute VLM features + $q_t$ once per observation $o_t$.
+                    \item Cache KV tensors for $[I_t^{1:n}, \ell_t, q_t]$.
+                    \item 10 Euler steps ($\delta = 0.1$) recompute \textit{only} the 50 action tokens $A_t^\tau$.
+                \end{itemize}
+                \item \textbf{Cross-embodiment training}: data from different robots is combined into a single model. 
+                \item \textbf{Training Recipe:}
+                \begin{itemize}
+                    \item \textit{Pre-training:} use a very large and diverse dataset.
+                    \item \textit{Post-training:} use smaller, high-quality, task-specific datasets.
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.5\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{3.1-pi0-small.png}
+                \caption{$\pi_0$ Architecture}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% =================================================
+% SmolVLA
+% =================================================
+\subsection{SmolVLA}
+\begin{frame}{SmolVLA: Architecture}
+    \begin{columns}[c]
+        \begin{column}{0.55\textwidth}
+            \begin{itemize}
+                \item \textbf{VLM}:
+                \begin{itemize}
+                    \item \textit{Inputs:} input images, instruction, and robot state.
+                    \item \textit{Visual tokens:} global image only (no tiling) + pixel shuffle $\to$ get at most 64 tokens/frame.
+                    \item \textit{Layer skipping:} Only the first $N=16$ layers are used. 
+                \end{itemize}
+                \item \textbf{Action Expert:} conditional flow matching.
+                \item \textbf{Interleaved Attention (CA + SA)}:
+                \begin{itemize}
+                    \item \textit{Self Attention}: action tokens attend to each other in a causal fashion.
+                    \item \textit{Cross Attention}: action tokens attend to the VLM's $K, V$.
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.5\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{3.2-smolvla.png}
+                \caption{SmolVLA architecture}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{SmolVLA: Asynchronous Inference + Data}
+    \begin{columns}[c]
+        \begin{column}{0.55\textwidth}
+            \begin{itemize}
+                \item \textbf{Decoupled Control Loop}: separates \texttt{RobotClient} execution from \texttt{PolicyServer} inference.
+                \item \textbf{Queue Threshold Trigger ($g$)}:
+                \begin{itemize}
+                    \item Triggers new prediction when remaining queue $|A_t|/n < g$.
+                    \item $g=0$: Sequential limit (empty queue causes idle lags).
+                    \item $g=0.7$: Async overlap ($\approx 30\%$ faster task completion).
+                    \item $g=1.0$: Compute-intensive (process every step).
+                \end{itemize}
+                \item \textbf{Pretraining Data}
+                \begin{itemize}
+                    \item community datasets.
+                    \item VLM annotation for task descriptions.
+                    \item Manual camera viewpoint normalization.    
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.5\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{3.2-asynchinf.png}
+                \caption{Asynchronous Inference}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% =================================================
+% OpenVLA and MolmoAct
+% =================================================
+\subsection{OpenVLA \& MolmoAct}
+\begin{frame}{OpenVLA \& MolmoAct}
+    \begin{columns}[c]
+        \begin{column}{0.55\textwidth}
+            \begin{itemize}
+                \item \textbf{OpenVLA}:
+                \begin{itemize}
+                    \item No action expert (no CFM).
+                    \item \textbf{Action Binning}: Discretizes continuous actions into 256 discrete spatial bins, and map them to tokens.
+                    \item Single-token generation bottleneck (autoregressive model, high latency).
+                \end{itemize}
+                \vspace{0.5em}
+                \item \textbf{MolmoAct (Action Reasoning Model)}:
+                \begin{itemize}
+                    \item Multi-stage: depth tokenization $\to$ spatial planning (visual CoT waypoints) $\to$ flow-matching action expert.
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.45\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{3.3-openvla.png}
+                \caption{OpenVLA Pipelines}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% =================================================
+% Preliminaries — Spec-VLA (Speculative Decoding)
+% =================================================
+\section{Architectures for VLA}
+\subsection{Spec-VLA \& VLA-Cache}
+\begin{frame}{Preliminaries: Spec-VLA}
+    \begin{columns}[c]
+        \begin{column}{0.55\textwidth}
+            \begin{itemize}
+                \item \textbf{Speculative Decoding:} output multiple tokens per step by feeding the main model with a draft answer.
+                \item \textbf{Motivation \& Problem}:
+                \begin{itemize}
+                    \item Autoregressive VLA decoding (OpenVLA) is latency-heavy.
+                    \item Exact token matching ($\hat{b} == b$) in standard speculative decoding fails for robotic motor bin tokens.
+                \end{itemize}
+                \item \textbf{Relaxed Acceptance Mechanism}:
+                \begin{itemize}
+                    \item Accepts draft bin $\hat{b}$ if within physical bin margin $r$:
+                    \[
+                    D(a_i, \hat{a}_i) = |b - \hat{b}| \le r
+                    \]
+                    \item Accepts "synonym" physical motor commands.
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.45\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{5.1-specvla.png}
+                \caption{Spec-VLA -- Draft Model}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% =================================================
+% Preliminaries — VLA-Cache (Temporal Token Caching)
+% =================================================
+\begin{frame}{Preliminaries: VLA-Cache}
+    \begin{columns}[c]
+        \begin{column}{0.55\textwidth}
+            \begin{itemize}
+                \item \textbf{Temporal Redundancy}: Consecutive camera frames share large, static background scenes.
+                
+                \item \textbf{Three-Step Adaptive Token Caching}:
+                \begin{itemize}
+                    \item \textit{Static Selection}: Cosine patch similarity identifies static tokens.
+                    \item \textit{Task-Relevance Eviction}: Uses text-to-vision decoder attention matrix $A_{\text{vis-text}}$ to force recomputation near "attendable tokens".
+                    \item \textit{Layer-Adaptive Reuse}: Entropy ratio $\alpha_\ell$ dynamically scales reuse deeper in the network.
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.45\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{5.2-vla-cache.png}
+                \caption{VLA-Cache.}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% =================================================
+% Paper 4.1
+% =================================================
+\subsection{Characterizing VLA models: Identifying the Action Generation Bottleneck for Edge AI Architectures}
+\begin{frame}{Paper 4.1: Identifying Bottleneck}
+    \begin{columns}[c]
+        \begin{column}{0.55\textwidth}
+            \begin{itemize}
+                \item \textbf{Hardware Setup \& Workload}:
+                \begin{itemize}
+                    \item Profiling MolmoAct-7B on NVIDIA Jetson AGX Orin and Jetson Thor.
+                \end{itemize}
+                \item \textbf{Key Profiling Findings}:
+                \begin{itemize}
+                    \item \textit{Primary Bottleneck}: Autoregressive generation (CoT reasoning) accounts for $\approx 75\%$ of full-model latency.
+                    \item \textit{Memory-Bandwidth Bound}: Thor provides $5\times$ the compute of Orin, but latency improves by only $1.4\times$.
+                \end{itemize}
+                \item \textbf{Simulated 100B Parameter Scaling}: GDDR7 and PIM improve control frequency.
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.45\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{4.1-bottleneck.png}
+                \caption{MolmoAct diagram.}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% =================================================
+% Paper 4.2 
+% =================================================
+\subsection{Characterizing VLA Models across XPUs}
+\begin{frame}{Paper 4.2: Characterizing VLA Models across XPUs}
+            \begin{itemize}
+                \item \textbf{Tier Classification}:
+                \begin{itemize}
+                    \item \textit{Consumers}: Small (SmolVLA, ACT) vs. Big ($\pi_0$, OpenVLA, Gr00t).
+                    \item \textit{Producers}: Basic (CPU, Ascend 310B), Standard (AGX Orin, B60 Pro, Ascend 310P), Ultra (Thor, RTX 4090).
+                \end{itemize}
+                \vspace{0.4em}
+                \item \textbf{CET Metric Framework}:
+                \begin{itemize}
+                    \item Evaluates feasibility via \textbf{Time} + VRAM constraints, then ranks by \textbf{Cost} and \textbf{Energy}.
+                \end{itemize}
+                \vspace{0.4em}
+                % \item \textbf{Finding \#1 \& \#2}:
+                % \begin{itemize}
+                %     \item Model size is \textit{not} a predictor of latency (Diffusion Policy with 100 steps is slower than $\pi_0$ with 4 steps).
+                %     \item "Right-sized" edge NPUs/XPUs (e.g., Ascend 310P) often outperform RTX 4090 on cost/energy efficiency.
+                % \end{itemize}
+            \end{itemize}
+
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.8\textwidth]{4.2-energy-latency.png}
+                \caption{Energy-Latency analysis}
+            \end{figure}
+\end{frame}
+
+\begin{frame}{Paper 4.2: VLA computation characteristics}
+    \begin{columns}[c]
+        \begin{column}{0.55\textwidth}
+            \begin{itemize}
+                \item \textbf{Phases utilization}:
+                \begin{itemize}
+                    \item VLM Backbone exhibits $>90\%$ SM utilization.
+                    \item Action Expert exhibits only $20\text{--}40\%$ SM utilization, yet dominates overall latency.
+                \end{itemize}
+                \vspace{0.4em}
+                \item \textbf{Inverted Generation Bottleneck}:
+                \begin{itemize}
+                    \item \textit{VLM Backbone is Compute-Bound}: Operates as a single-pass encoder.
+                    \item \textit{Action Expert is Memory-Bound}: Small action sequence length results in low arithmetic intensity .
+                \end{itemize}
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.45\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{4.2-utilization.png}
+                \caption{Latency breakdown and SM utilization.}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Paper 4.2: Optimizations (DP-Cache \& V-AEFusion)}
+    
+    \begin{columns}[c]
+        \begin{column}{0.5\textwidth}
+            \begin{itemize}
+                \item \textbf{DP-Cache (Diffusion Policy Cache)}:
+                \begin{itemize}
+                    \item Profiling reveals a "stable segment" (steps 20--80) with minimal $L_1$ change.
+                    \item Caches prediction output and skips $S-1$ network passes.
+                \end{itemize}
+                \item \textbf{V-AEFusion (Pipeline Parallelism)}:
+                \begin{itemize}
+                    \item Overlaps VLM prefill on frame $o_t$ with early denoising steps on Action Expert using stale KV cache from $o_{t-1}$.
+                    \item 5 stale steps hide early coarse steps.
+                    \item Exploit temporal coherence.
+                \end{itemize}
+                \item Other optimization techniques: Cache-VLA, Spec-VLA, compiling the model.
+            \end{itemize}
+        \end{column}
+
+        \begin{column}{0.55\textwidth}
+            \vspace{-0.5cm}
+            \begin{figure}
+                \centering
+                \includegraphics[height=0.45\textheight]{4.2-dp-cache.png}
+                
+                \medskip
+                
+                \includegraphics[height=0.25\textheight]{4.2-vaefusion.png}
+                \caption{DP-Cache \& V-AEFusion Pipeline}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
 \end{document}

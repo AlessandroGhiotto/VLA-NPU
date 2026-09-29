@@ -644,7 +644,7 @@ The Vision Transformer (ViT) applies a standard Transformer encoder directly to 
     \]
     \item In $\pi_0$, the generated sample is an action chunk $A_t$, while the conditioning information is the current robot observation:
     \[
-        \mathbf{o}_t = (\text{images},\text{language}, \text{robot state}) = [\mathbf{I}_t^1, \dots, \mathbf{I}_t^n, l_t, \mathbf{q}_t].
+        \mathbf{o}_t = (\text{images},\text{language}, \text{robot state}) = [\mathbf{I}_t^1, \dots, \mathbf{I}_t^n, \ell_t, \mathbf{q}_t].
     \]
     Thus, the learned vector field becomes
     \[
@@ -749,13 +749,13 @@ The Vision Transformer (ViT) applies a standard Transformer encoder directly to 
 \item \textbf{Inputs:}
 \begin{dashlist}
     \item Multiple RGB images from the robot cameras $\mathbf{I}_t^1, \dots, \mathbf{I}_t^n$.
-    \item A natural-language command $l_t$.
+    \item A natural-language command $\ell_t$.
     \item The robot's proprioceptive state (joint angles) $\mathbf{q}_t$.
     \item A noisy chunk of future actions $\mathbf{A}_t^\tau$.
 \end{dashlist}
 The aggreagated inputs form the observation
 \[
-\mathbf{o}_t = [\mathbf{I}_t^1, \dots, \mathbf{I}_t^n, l_t, \mathbf{q}_t].
+\mathbf{o}_t = [\mathbf{I}_t^1, \dots, \mathbf{I}_t^n, \ell_t, \mathbf{q}_t].
 \]
 
 
@@ -875,7 +875,7 @@ A pretrained VLM process the state inputs, and its output features are fed to th
 
 \textbf{VLM.} we have a language decoder which is fed by a sequence of tokens, which are obtained from the input images, instruction, and robot state.
 \begin{dashlist}
-    \item \textbf{Visual tokens.} They are obtained via a vision encoder. As input we use the global image only, in addition to a pixel shuffle operation (rearranges elements in a tensor of shape $(*,C\times r^2,H,W)$ to a tensor of shape $(*,C,H\times r,W\times r)$, where $r$ is an upscale factor).
+    \item \textbf{Visual tokens.} They are obtained via a vision encoder. As input we use the global image only, in addition to a pixel shuffle operation (rearranges elements in a tensor of shape $(*,C\times r^2,H,W)$ to a tensor of shape $(*,C,H\times r,W\times r)$, where $r$ is an upscale factor). Here C is the number of tokens, by applying the shuffle operation, starting from the output of the vision encoder, we get fewer but richer feature vectors. We trade \# tokens with embedding dimension.
     \item \textbf{Projections.} Linear layers are used to change the dimensions of vectors. (1) project the state to match the VLM dimension; (2) project the actions to match the action expert dimension; (3) project the VLM output features to match the action expert dimension.
     \item \textbf{Layer skipping.} Only the first $N=16$ layers of the VLM are used. 
 \end{dashlist}
@@ -1183,7 +1183,7 @@ In robotic control, consecutive visual frames share large static background regi
 % \begin{dashlist}
 %     \item \textbf{Overhead vs. Reduction}:
 %     \begin{dashlist}
-%         \item Patch similarity overhead $O(H^2)$ and attention entropy filtering $O(L_t L_v D + L^2 D)$ are negligible compared to full Transformer layer forward pass $O(4 L D^2 + 2 L^2 D + 2 L D M)$.
+%         \item Patch similarity overhead $O(H^2)$ and attention entropy filtering $O(\ell_t L_v D + L^2 D)$ are negligible compared to full Transformer layer forward pass $O(4 L D^2 + 2 L^2 D + 2 L D M)$.
 %         \item Achieves ~27\% theoretical FLOPs reduction per decoding step.
 %     \end{dashlist}
 %     \item \textbf{Benchmark Performance}:

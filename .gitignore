@@ -20,6 +20,9 @@
 *.bcf
 *.vrb
 
+*.pdf
+
+
 # OS and Editor artifacts
 .DS_Store
 *.swp

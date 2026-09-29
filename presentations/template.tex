@@ -11,6 +11,27 @@
 \usepackage{graphicx}
 \usepackage{tikz}
 
+% Outline
+\AtBeginSection[]
+{
+\begin{frame}[plain,noframenumbering]
+\frametitle{Outline}
+\begin{columns}[T]
+    \begin{column}{0.01\textwidth}
+        
+    \end{column}
+    \begin{column}{0.95\textwidth}
+        \tableofcontents[currentsection,
+                        %currentsubsection,
+                        %hideothersubsections, 
+                        %sectionstyle=show/shaded, 
+                        %subsectionstyle=show/shaded%/hide
+                 ]
+    \end{column}
+\end{columns}
+\end{frame}
+}
+
 % Graphic search paths: checks figures/, shared/, theme img, and current dir
 \graphicspath{{../figures/}{../figures/polimi/}{../figures/papers/}{shared/}{./}}
 
