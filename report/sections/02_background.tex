@@ -242,7 +242,7 @@ Mapping involves the placement and scheduling in space and time of every operati
 
 \subsubsection{Exploiting Sparsity}
 \begin{dashlist}
-    \item \textbf{Sources of sparsity.}
+    \item \textbf{SOURCES OF SPARSITY.}
     \begin{dashlist}
         \item Activation sparsity. Due to ReLUs; correlation in the input data (if the difference is zero between valued of the same neighbourhood of pixels.); upconvolutional layers.
         \item Weight sparsity. Repeated weights in a filter, this can be exploited offline, we know the weights. Reordering the weights can reduce the number of weight accesses.
@@ -296,9 +296,16 @@ To achieve efficiency we may also want to design an efficient DNN network archit
 \subsection{Eyeriss}
 \label{subsec:eyeriss}
 
+\begin{figure}[tb]
+\centering
+\includegraphics[width=0.7\textwidth]{1.2-eyeriss.png}
+\caption{Eyeriss architecture, credits \cite{chen2016eyeriss}}
+\label{fig:eyeriss}
+\end{figure}
+
 \subsubsection{System Architecture}
 \begin{dashlist}
-    \item \textbf{Spatial Architecture}: $168$ PEs organized in a $12 \times 14$ array operating in a core clock domain.
+    \item \textbf{Spatial Architecture}: $168$ PEs organized in a $12 \times 14$ array operating in a core clock domain. See Fig.~\ref{fig:eyeriss}.
     \item Each PE can either communicate with its neighbor PEs or the Global Buffer (GLB) through a NoC, or acces a local memory (spad). There are four levels of memory hierarchy: DRAM, GLB, inter-PE communication, and spads.
     \item The PEs run independently of each other, they don't proceed in lock steps, so they don't behave as a systolic array.
     \item \textbf{Row Stationary (RS) dataflow.}
@@ -345,63 +352,64 @@ To achieve efficiency we may also want to design an efficient DNN network archit
 \end{figure}
 
 \subsubsection{TPU Architecture}
-\begin{dashlist}
-    \item The TPU (see Fig.~\ref{fig:tpu}) was designed as a coprocessor, that you can plug into existing servers like a GPU; but unlike a GPU, the host server sends TPU instructions rather than fetching them itself. The goal was to run whole inference models in the TPU, to reduce interaction with the host CPU, and to be flexible enough to match future DNN needs. The target are inference apps, which favors latency over throughput. Designed for dense matrixes. 
-    \item \textbf{Blocks:}
-    \begin{dashlist}
-        \item \textit{Matrix Multiply Unit (MMU).} It contains 256x256 MACs that can perform 8-b multiply-and-adds on integers.
-        \item \textit{Accumulators.} The MMU produces 16-bit psums, which accumulate into the 32-bit Accumulators (4 MiB total).
-        \item Weights are staged through an on chip \textit{Weight FIFO}, that reads from an off-chip DRAM called \textit{Weight Memory}.
-        \item \textit{Activation.} Applies nonlinear functions.
-        \item \textit{Unified Buffer (UB).} It's an on-chip memory holding intermediate results, it can serve as input to the MMU.
-        \item \textit{DMA Controller.} It transfers the data between the CPU host memory and the UB.
-        \end{dashlist}
-    \item \textbf{CISC Instructions:}
-    \begin{dashlist}
-        \item \verb|Read_Host_Memory|: CPU mem \verb|->| UB.
-        \item \verb|Read_Weights|: Weight Memory \verb|->| Weight FIFO.
-        \item \verb|MatrixMultiply/Convolve|: makes the MMU perform a matrix multiply/convolution from the UB to the Accumulators.
-        \item \verb|Activate|: performs a nonlinear function, from Accumulators to UB.
-        \item \verb|Write_Host_Memory|: UB \verb|->| CPU mem.
-    \end{dashlist}
-    The aim is to keep the MMU busy. The TPU uses a 4-stage pipeline, where each instruction executes in a separate stage. The aim is to hide the execution of the other instructions by overlapping their execution with the \verb|MatrixMultiply| instruction. CISC instructions can occupy a stage for thousands of clock cycles.
-    \item Since arithmetic is cheap, the MMU uses systolic execution to save energy by reducing reads/writes of the UB. It relies on data from different directions arriving at cells in an array at regular intervals where they are combined.
-\end{dashlist}  
+The TPU (see Fig.~\ref{fig:tpu}) was designed as a coprocessor, that you can plug into existing servers like a GPU; but unlike a GPU, the host server sends TPU instructions rather than fetching them itself. The goal was to run whole inference models in the TPU, to reduce interaction with the host CPU, and to be flexible enough to match future DNN needs. The target are inference apps, which favors latency over throughput. Designed for dense matrixes. 
 
-\subsubsection{Performance}
+\textbf{Blocks:}
 \begin{dashlist}
-    \item \textbf{Roofline Model.} Applications don't fit in on-chip caches, so they are either computation-limited or memory bandwidth-limited. With low operational intensity (FLOPS/Byte) a program is memory bandwidth-limited; with high operational intensity a program is bounded by the max achievable computation rate (FLOPS/sec). The gap between the actual FLOP/sec and the ceiling shows the potential benefit.
-    RESULTS:
-    \begin{dashlist}
-        \item LSTM and MLP are memory-bound, instead CNN is compute-bound.
-        \item In the TPU almost all aplications touch the ceiling, for the CPU and the GPU they don't. The reason is the response time, small increases in response time cause customers to use a service less; so the CPU and GPU can't epxloit their potentially higher throughput if they don't meet the response-time limit.
-        \item The TPU has no sophisticated feature that consume energy (caches, branch prediction, out-of-order execution...). "Minimalism is a virtue of domain-specific processors".
-        \item The inflection point (where we go from memory-bound to compute-bound) of the TPU it's more on the right wrt the CPU's and GPU's inflection point. Since the TPU has lower bandwidth and higher peak performance. 
-    \end{dashlist}
-    \item \textbf{Energy Proportionality:} servers should consume power proportional to the amount of work performed. The TPU has the lowest power, but it has poor energy proportionality: at 10\% load, the TPU uses 88\% of the power it uses at 100\%. 
-    \item \textbf{Summary TPU success.} Low utilization of a huge, low-cost compute engine still yields high cost-effective performance.
-    The large MMU; the SW-controlled on-chip memory; the ability to run whole inference models to reduce dependence on CPU; a single-threaded, deterministic execution model (proved to be good on 99-percentile response limits); enough flexibility for DNNs; omission of general purpose features (so the TPU can be low power despite the large datapath and memory); the use of 8-b integers.
+    \item \textit{Matrix Multiply Unit (MMU).} It contains 256x256 MACs that can perform 8-b multiply-and-adds on integers.
+    \item \textit{Accumulators.} The MMU produces 16-bit psums, which accumulate into the 32-bit Accumulators (4 MiB total).
+    \item Weights are staged through an on chip \textit{Weight FIFO}, that reads from an off-chip DRAM called \textit{Weight Memory}.
+    \item \textit{Activation.} Applies nonlinear functions.
+    \item \textit{Unified Buffer (UB).} It's an on-chip memory holding intermediate results, it can serve as input to the MMU.
+    \item \textit{DMA Controller.} It transfers the data between the CPU host memory and the UB.
 \end{dashlist}
 
-    % \item \textbf{Latency Limits and Throughput (99th-Percentile SLA)}:
-    % \begin{dashlist}
-    %     \item User-facing inference applications impose strict latency constraints (e.g., 7 ms SLA limit for MLP0).
-    %     \item At small batch sizes required to meet 7 ms latency: CPU runs at batch 16 ($7.2 \text{ ms}$, 42\% of max IPS); GPU runs at batch 16 ($6.7 \text{ ms}$, 37\% of max IPS).
-    %     \item TPU achieves $80\%$ of its max throughput at batch size 200 while meeting the $7.0 \text{ ms}$ response-time limit.
-    % \end{dashlist}
+\textbf{CISC Instructions:}
+\begin{dashlist}
+    \item \verb|Read_Host_Memory|: CPU mem \verb|->| UB.
+    \item \verb|Read_Weights|: Weight Memory \verb|->| Weight FIFO.
+    \item \verb|MatrixMultiply/Convolve|: makes the MMU perform a matrix multiply/convolution from the UB to the Accumulators.
+    \item \verb|Activate|: performs a nonlinear function, from Accumulators to UB.
+    \item \verb|Write_Host_Memory|: UB \verb|->| CPU mem.
+\end{dashlist}
 
-    % \item \textbf{Performance and Energy Ratios}:
-    % \begin{dashlist}
-    %     \item \textit{Relative Performance (per die)}: TPU is $14.5\times$ (geometric mean) and $29.2\times$ (weighted production mix mean) faster than Haswell CPU; TPU is $13.2\times$ (GM) and $15.3\times$ (WM) faster than K80 GPU.
-    %     \item \textit{Total Performance/Watt (server level)}: TPU is $17\times - 34\times$ higher than Haswell CPU and $14\times - 16\times$ higher than K80 GPU.
-    %     \item \textit{Incremental Performance/Watt}: TPU is $41\times - 83\times$ higher than Haswell CPU and $25\times - 29\times$ higher than K80 GPU.
-    % \end{dashlist}
+The aim is to keep the MMU busy. The TPU uses a 4-stage pipeline, where each instruction executes in a separate stage. The aim is to hide the execution of the other instructions by overlapping their execution with the \verb|MatrixMultiply| instruction. CISC instructions can occupy a stage for thousands of clock cycles.
 
-    % \item \textbf{Hypothetical Redesign ($\text{TPU}'$)}:
-    % \begin{dashlist}
-    %     \item Upgrading Weight Memory to GDDR5 ($5\times$ bandwidth increase) moves the roofline ridge point to $250 \text{ Ops/Byte}$.
-    %     \item Boosts performance by $2.6\times - 3.9\times$ ($30\times - 50\times$ faster than CPU/GPU) and increases Performance/Watt to $70\times - 200\times$ over Haswell/K80.
-    % \end{dashlist}
+Since arithmetic is cheap, the MMU uses systolic execution to save energy by reducing reads/writes of the UB. It relies on data from different directions arriving at cells in an array at regular intervals where they are combined.
+
+\subsubsection{Performance}
+\textbf{Roofline Model.} Applications don't fit in on-chip caches, so they are either computation-limited or memory bandwidth-limited. With low operational intensity (FLOPS/Byte) a program is memory bandwidth-limited; with high operational intensity a program is bounded by the max achievable computation rate (FLOPS/sec). The gap between the actual FLOP/sec and the ceiling shows the potential benefit.
+RESULTS:
+\begin{dashlist}
+    \item LSTM and MLP are memory-bound, instead CNN is compute-bound.
+    \item In the TPU almost all aplications touch the ceiling, for the CPU and the GPU they don't. The reason is the response time, small increases in response time cause customers to use a service less; so the CPU and GPU can't epxloit their potentially higher throughput if they don't meet the response-time limit.
+    \item The TPU has no sophisticated feature that consume energy (caches, branch prediction, out-of-order execution...). "Minimalism is a virtue of domain-specific processors".
+    \item The inflection point (where we go from memory-bound to compute-bound) of the TPU it's more on the right wrt the CPU's and GPU's inflection point. Since the TPU has lower bandwidth and higher peak performance. 
+\end{dashlist}
+\textbf{Energy Proportionality:} servers should consume power proportional to the amount of work performed. The TPU has the lowest power, but it has poor energy proportionality: at 10\% load, the TPU uses 88\% of the power it uses at 100\%. 
+
+\textbf{Summary TPU success.} Low utilization of a huge, low-cost compute engine still yields high cost-effective performance.
+The large MMU; the SW-controlled on-chip memory; the ability to run whole inference models to reduce dependence on CPU; a single-threaded, deterministic execution model (proved to be good on 99-percentile response limits); enough flexibility for DNNs; omission of general purpose features (so the TPU can be low power despite the large datapath and memory); the use of 8-b integers.
+
+% \item \textbf{Latency Limits and Throughput (99th-Percentile SLA)}:
+% \begin{dashlist}
+%     \item User-facing inference applications impose strict latency constraints (e.g., 7 ms SLA limit for MLP0).
+%     \item At small batch sizes required to meet 7 ms latency: CPU runs at batch 16 ($7.2 \text{ ms}$, 42\% of max IPS); GPU runs at batch 16 ($6.7 \text{ ms}$, 37\% of max IPS).
+%     \item TPU achieves $80\%$ of its max throughput at batch size 200 while meeting the $7.0 \text{ ms}$ response-time limit.
+% \end{dashlist}
+
+% \item \textbf{Performance and Energy Ratios}:
+% \begin{dashlist}
+%     \item \textit{Relative Performance (per die)}: TPU is $14.5\times$ (geometric mean) and $29.2\times$ (weighted production mix mean) faster than Haswell CPU; TPU is $13.2\times$ (GM) and $15.3\times$ (WM) faster than K80 GPU.
+%     \item \textit{Total Performance/Watt (server level)}: TPU is $17\times - 34\times$ higher than Haswell CPU and $14\times - 16\times$ higher than K80 GPU.
+%     \item \textit{Incremental Performance/Watt}: TPU is $41\times - 83\times$ higher than Haswell CPU and $25\times - 29\times$ higher than K80 GPU.
+% \end{dashlist}
+
+% \item \textbf{Hypothetical Redesign ($\text{TPU}'$)}:
+% \begin{dashlist}
+%     \item Upgrading Weight Memory to GDDR5 ($5\times$ bandwidth increase) moves the roofline ridge point to $250 \text{ Ops/Byte}$.
+%     \item Boosts performance by $2.6\times - 3.9\times$ ($30\times - 50\times$ faster than CPU/GPU) and increases Performance/Watt to $70\times - 200\times$ over Haswell/K80.
+% \end{dashlist}
 
 %---------------------------------------------------------------------
 % TRANSFORMER AND VISION TRANSFORMER
@@ -594,8 +602,7 @@ The Vision Transformer (ViT) applies a standard Transformer encoder directly to 
 \label{fig:cfm}
 \end{figure}
 
-\begin{dashlist}
-\item \textbf{Generative flow:}
+\textbf{Generative flow.}
 \begin{dashlist}
 \item Flow-based generative models learn a transformation from a simple distribution, typically Gaussian noise, to the target data distribution.
 \item Instead of directly learning a mapping from noise to data, a continuous flow defines a \textbf{velocity field} that specifies how a sample should move at each point in time:
@@ -604,7 +611,7 @@ The Vision Transformer (ViT) applies a standard Transformer encoder directly to 
 \item Starting from a sample $x^0$ drawn from the noise distribution, integrating this velocity field from $\tau=0$ to $\tau=1$ produces a sample $x^1$ from the learned data distribution.
 \end{dashlist}
 
-\item \textbf{Conditional Flow Matching (CFM):}
+\textbf{Conditional Flow Matching (CFM).}
 \begin{dashlist}
     \item CFM learns the velocity field by explicitly constructing a path between a noise sample $\epsilon$ and a target data sample $x$.
     \item A simple linear interpolation is
@@ -629,7 +636,7 @@ The Vision Transformer (ViT) applies a standard Transformer encoder directly to 
     This numerical integration (Forward Euler) gradually transforms the noise into a generated sample.
 \end{dashlist}
 
-\item \textbf{Conditioning:}
+\textbf{Conditioning.}
 \begin{dashlist}
     \item In conditional generation, the velocity field also receives the conditioning information $c$
     \[
@@ -646,7 +653,7 @@ The Vision Transformer (ViT) applies a standard Transformer encoder directly to 
     allowing the model to generate actions appropriate for the current visual scene, language instruction, and robot state.
 \end{dashlist}
 
-\item \textbf{Application to robot actions:}
+\textbf{Application to robot actions.}
 \begin{dashlist}
     \item $\pi_0$ generates an entire action chunk
     \[
@@ -695,8 +702,6 @@ The Vision Transformer (ViT) applies a standard Transformer encoder directly to 
         +
         \delta\,\mathbf{v}_\theta(\mathbf{A}_t^\tau,\mathbf{o}_t).
     \]
-\end{dashlist}
-
 \end{dashlist}
 
 \subsubsection{Motivation and Overview}
@@ -867,37 +872,37 @@ The hardest tasks benefit particularly strongly from pre-training. Training only
 
 \subsubsection{Model Architecture}
 A pretrained VLM process the state inputs, and its output features are fed to the action expert wich produces continuous actions. See Fig.~\ref{fig:smolvla}
-\begin{dashlist}
-    \item \textbf{VLM.} we have a language decoder which is fed by a sequence of tokens, which are obtained from the input images, instruction, and robot state.
-    \begin{dashlist}
-        \item \textbf{Visual tokens.} They are obtained via a vision encoder. As input we use the global image only, in addition to a pixel shuffle operation (rearranges elements in a tensor of shape $(*,C\times r^2,H,W)$ to a tensor of shape $(*,C,H\times r,W\times r)$, where $r$ is an upscale factor).
-        \item \textbf{Projections.} Linear layers are used to change the dimensions of vectors. (1) project the state to match the VLM dimension; (2) project the actions to match the action expert dimension; (3) project the VLM output features to match the action expert dimension.
-        \item \textbf{Layer skipping.} Only the first $N=16$ layers of the VLM are used. 
-    \end{dashlist}
-    \item \textbf{Flow matching action expert.} Similarly to $\pi_0$, the action expert $\mathbf{v}_\theta$ is trained to predict an action chunk starting from VLM features $\mathbf{A}_t = [a_t,a_{t+1},\ldots,a_{t+n}]$.
-    \begin{dashlist}
-        \item $\mathbf{o}_t$ VLM features extracted from an observation $o_t$.
-        \item Noisy action: $\mathbf{A} _t^\tau=\tau \mathbf{A}_t+(1-\tau),\epsilon\qquad
-        \epsilon\sim\mathcal{N}(0,I),$.
-        \item $\mathbf{v}$ is trained to match
-        $\mathbf{u}(\mathbf{A}_t^\tau|\mathbf{A}_t) = 
-         \mathbf{A}_t-\epsilon,$
-        \item The action expert is trained with the objective:
-        \[
-        \mathcal{L}^\tau(\theta)=
-        \mathop{\mathbb{E}}_{\substack{\mathbf{A}_t \sim p(\cdot|\mathbf{o}_t), \\
-                            \mathbf{A}_t^\tau \sim q(\cdot|\mathbf{A}_t)}} 
-        [|| \mathbf{v}_\theta(\mathbf{A}_t^\tau,\mathbf{o}_t) - \mathbf{u}(\mathbf{A}_t^\tau|\mathbf{A}_t) ||^2].
-        \]
-    \end{dashlist}
 
-    The action expert interacts with the VLM via attention. 
-    \begin{dashlist}
-        \item (Masked) Self Attention: action tokens attend to each other in a causal fashion (attend only to past tokens).
-        \item Cross Attention: action tokens (queries) attend to the VLM's keys and values.
-    \end{dashlist}
-    In the action expert this two kinds of attention mechanism are interleaved.
+\textbf{VLM.} we have a language decoder which is fed by a sequence of tokens, which are obtained from the input images, instruction, and robot state.
+\begin{dashlist}
+    \item \textbf{Visual tokens.} They are obtained via a vision encoder. As input we use the global image only, in addition to a pixel shuffle operation (rearranges elements in a tensor of shape $(*,C\times r^2,H,W)$ to a tensor of shape $(*,C,H\times r,W\times r)$, where $r$ is an upscale factor).
+    \item \textbf{Projections.} Linear layers are used to change the dimensions of vectors. (1) project the state to match the VLM dimension; (2) project the actions to match the action expert dimension; (3) project the VLM output features to match the action expert dimension.
+    \item \textbf{Layer skipping.} Only the first $N=16$ layers of the VLM are used. 
 \end{dashlist}
+
+\textbf{Flow matching action expert.} Similarly to $\pi_0$, the action expert $\mathbf{v}_\theta$ is trained to predict an action chunk starting from VLM features $\mathbf{A}_t = [a_t,a_{t+1},\ldots,a_{t+n}]$.
+\begin{dashlist}
+    \item $\mathbf{o}_t$ VLM features extracted from an observation $o_t$.
+    \item Noisy action: $\mathbf{A} _t^\tau=\tau \mathbf{A}_t+(1-\tau),\epsilon\qquad
+    \epsilon\sim\mathcal{N}(0,I),$.
+    \item $\mathbf{v}$ is trained to match
+    $\mathbf{u}(\mathbf{A}_t^\tau|\mathbf{A}_t) = 
+        \mathbf{A}_t-\epsilon,$
+    \item The action expert is trained with the objective:
+    \[
+    \mathcal{L}^\tau(\theta)=
+    \mathop{\mathbb{E}}_{\substack{\mathbf{A}_t \sim p(\cdot|\mathbf{o}_t), \\
+                        \mathbf{A}_t^\tau \sim q(\cdot|\mathbf{A}_t)}} 
+    [|| \mathbf{v}_\theta(\mathbf{A}_t^\tau,\mathbf{o}_t) - \mathbf{u}(\mathbf{A}_t^\tau|\mathbf{A}_t) ||^2].
+    \]
+\end{dashlist}
+
+The action expert interacts with the VLM via attention. 
+\begin{dashlist}
+    \item (Masked) Self Attention: action tokens attend to each other in a causal fashion (attend only to past tokens).
+    \item Cross Attention: action tokens (queries) attend to the VLM's keys and values.
+\end{dashlist}
+In the action expert this two kinds of attention mechanism are interleaved.
 
 \subsubsection{Pretraining data collected by the community}
 \begin{dashlist}
@@ -1002,6 +1007,31 @@ and so the new queue will be $\mathbf{A_{t+1}} \leftarrow \text{AGGR}[\mathbf{A}
 \end{dashlist}
 
 
+\subsection{OpenVLA}
+\label{subsec:openvla}
+
+\begin{figure}[tb]
+\centering
+\includegraphics[width=0.9\textwidth]{3.3-openvla.png}
+\caption{OpenVLA architecture, credits \cite{pmlr-v270-kim25c}}
+\label{fig:openvla}
+\end{figure}
+
+\begin{dashlist}
+    \item \textbf{VLM components.} (1) a visual encoder that maps image inputs to embeddings; (2) a projector that takes the output embeddings of the visual encoder and maps them into the input space of a language model; (3) an LLM backbone. See Fig.~\ref{fig:openvla}
+    \item Prismatic-7B VLM is used, which uses SigLIP and DinoV2 for the visual encoding, and Llama-2-7b as LLM. 
+    \item \textbf{Predict robot actions.}  
+    \begin{dashlist}
+        \item Action prediction as a “vision-language” task, where an input observation image and a natural language task instruction are mapped to a string of \textbf{predicted robot actions}.
+        \item actions are represented in the output space of the LLM by mapping continuous robot actions to discrete tokens used by the language model's tokenizer. We \textbf{discretize} each dimension of the robot actions separately into one of 256 bins.
+        \item We obtain $N$ discrete integers $\in [0 . . . 255]$ for an $N$-dimensional robot action.
+        \item The 256 least used tokens are overwritten with the action tokens.
+        \item Once the actions are processed as a sequence of tokens, OpenVLA is trained with a standard \textbf{next-token prediction} objective, evaluating the cross-entropy loss on the predicted action tokens.
+        \item The predefined action tokens can be easily mapped back to robot action.
+    \end{dashlist}
+        
+\end{dashlist}
+
 %-------------------------------------------------------------------------
 % ARCHITECTURES FOR VLA
 %-------------------------------------------------------------------------
@@ -1017,7 +1047,7 @@ and so the new queue will be $\mathbf{A_{t+1}} \leftarrow \text{AGGR}[\mathbf{A}
 
 \subsubsection{Preliminaries: MolmoAct}
 
-Unlike $\pi_0$ and SmolVLA that directly map multimodal inputs to continuous actions via a vector field, MolmoAct is a \textbf{Action Reasoning Model (ARM)}. The inference has three stages:
+Unlike $\pi_0$ and SmolVLA that directly map multimodal inputs to continuous actions via a vector field, MolmoAct \cite{fang2026molmoact2actionreasoningmodels} is a \textbf{Action Reasoning Model (ARM)}. The inference has three stages:
 \begin{dashlist}
     \item \textbf{Depth Tokenization.} The Vision-Language Model (VLM) backbone autoregressively outputs discrete spatial depth perception tokens (quantized via VQ-VAE, e.g., 100 tokens per resized $320\times320$ image frame).
     \item \textbf{Spatial Planning:} Conditioned on the depth tokens, the VLM autoregressively generates 1 to 5 visual waypoint coordinates $(u_t, v_t) \in [0, 255]$ representing target gripper trajectory traces in image space. This is like a "visual Chain-of-thought reasoning", we generate a plan for the action we want to perform.
@@ -1051,6 +1081,177 @@ Unlike $\pi_0$ and SmolVLA that directly map multimodal inputs to continuous act
 
 \subsection{VLA models: Heterogeneous Edge Accelerators}
 \label{subsec:vla-heterogeneous}
+
+\subsubsection{Preliminaries: Spec-VLA}
+
+\begin{figure}[tb]
+\centering
+\includegraphics[width=0.9\textwidth]{5.1-specvla.png}
+\caption{Speculative Decoding with OpenVLA, credits \cite{wang2025specvlaspeculativedecodingvisionlanguageaction}}
+\label{fig:spec-vla}
+\end{figure}
+
+Spec-VLA \cite{wang2025specvlaspeculativedecodingvisionlanguageaction} applies Speculative Decoding to \textbf{autoregressive} Vision-Language-Action (VLA) models (such as OpenVLA, not VLA based on conditional flow matching) to accelerate action token prediction without requiring fine-tuning or structural modifications to the target verification model. See Fig.~\ref{fig:spec-vla}
+
+\begin{dashlist}
+    \item \textbf{VLA Action Decoding}: OpenVLA discretize continuous 7-DoF robot actions into 256 discrete bins each, and it generates them sequentially.
+    \item \textbf{Speculative Decoding}: output multiple tokens per step. We use a small auxiliary model to create a draft of the answer, the main model scores the entire sequence of candidates tokens, and we keep tokens that matches ($\hat{a}_i == a_i$) between the draft model and target model.
+    \item In VLA action generation, exact matching yields minimal speedups because predicting exact bins is difficult for draft models.
+\end{dashlist}
+
+\textbf{Architecture}
+\begin{dashlist}
+    \item \textbf{Verification Model ($M_V$)}: The main VLA backbone (OpenVLA-7B). It receives multi-modal inputs and verifies candidate token sequences produced by the draft model in a single parallel forward pass.
+    \item \textbf{Draft Model ($M_D$)}: A lightweight auxiliary module (e.g., a single LLaMA decoder layer with a linear projection head). Combines target model hidden states $f_{1:t}$ with concatenated visual embeddings $e_v$ and language instruction embeddings $e_p$:  
+        \[
+        \hat{a}_i = M_D(f_{1:t}, \, \text{concat}(e_v, e_p), \, \hat{a}_{t+1:i-1}) .
+        \]
+    % \item \textbf{Dynamic Draft Tree Execution}: Based on the Eagle-2 framework, $M_D$ records Top-$K$ candidate predictions to construct a dynamic draft tree (e.g., max 50 nodes, depth 4). Multiple candidate action paths are verified simultaneously by $M_V$ via tree attention.
+\end{dashlist}
+
+\textbf{Relaxed Acceptance Mechanism.} To increase the accepted sequence length per forward pass, Spec-VLA replaces strict token matching with a physical distance-based acceptance criterion.
+
+\begin{dashlist}
+    \item \textbf{Distance Metric}: Since bin IDs $b \in \{0, \dots, 255\}$ directly map to continuous spatial intervals, the distance is defined as
+    \[
+    D(a_i, \hat{a}_i) = |b - \hat{b}| .
+    \]
+    \item \textbf{Relaxation Threshold ($r$)}: acceptable bins satisfies
+    \[
+    D(a_i, \hat{a}_i) \le r .
+    \]
+    \item \textbf{Verification and Resampling}:
+    \[
+    a_i = M_V(\hat{a}_{1:i-1}, o, p, \theta), \quad
+    \begin{cases}
+    \text{Accept } \hat{a}_i, & \text{if } D(a_i, \hat{a}_i) \le r \\
+    \text{Resample } \hat{a}_i \leftarrow a_i \text{ and reject remaining draft tokens}, & \text{if } D(a_i, \hat{a}_i) > r
+    \end{cases}
+    \]
+    This allows "synonym" action tokens (physically close actions) to be accepted, increasing the number of accepted tokens.
+\end{dashlist}
+
+
+\subsubsection{Preliminaries: VLA-Cache}
+
+In robotic control, consecutive visual frames share large static background regions that traditional VLA models re-encode from scratch. VLA-Cache \cite{xu2025vlacacheefficientvisionlanguageactionmanipulation} selectively reuses cached Key-Value (KV) representations of static visual tokens across adjacent frames while recomputing task-critical tokens.
+
+\begin{dashlist}
+    \item \textbf{1. Static token selection.}
+    \begin{dashlist}
+        \item Divides input frame $\mathbf{I}_t \in \mathbb{R}^{H \times W \times 3}$ into $N \times N$ non-overlapping spatial patches $P_{i,j}^t$.
+        \item Computes \textbf{cosine similarity} between patch $P_{i,j}^t$ in current frame $t$ and corresponding patch $P_{i,j}^{t-1}$ in previous frame $t-1$.
+        % \[
+        % \text{Sim}\left(P_{i,j}^t, \, P_{i,j}^{t-1}\right) = \frac{P_{i,j}^t \cdot P_{i,j}^{t-1}}{\|P_{i,j}^t\|_2 \cdot \|P_{i,j}^{t-1}\|_2} .
+        % \]
+        \item Patches exceeding a similarity threshold $\tau$ are filtered via top-$k$ selection to obtaining an initial static token pool $P_{\text{static}}$.
+    \end{dashlist}
+
+    \item \textbf{2. Task-relevant tokens.}
+    \begin{dashlist}
+        \item Extracts text-to-vision attention matrices $A_{\text{vis-text}}^{\ell}$ from decoder layer $\ell$.
+        \item Aggregates attention heads and averages across decoder layers to compute a task relevance score $S_{\text{task-relevance}}$ for each vision token; which tells us how much each visual token "is attended" by textual tokens.
+        \item Tokens with $S_{\text{task-relevance}} \ge \tau_{\text{task}}$ are classified as $P_{\text{task-relevant}}$ and evicted from the reuse pool:
+        \[
+        P_{\text{reuse}} = P_{\text{static}} \setminus P_{\text{task-relevant}} .
+        \]
+    \end{dashlist}
+
+    \item \textbf{3. Layer-Adaptive Token Reusing.}
+    \begin{dashlist}
+        \item We measure the \textbf{entropy} in the decoder attention $E^\ell$ at layer $\ell$. Attention is dispersed in early layers and becomes highly concentrated in deeper layers.
+        \item Measure the ratio in the concentration of the attention between two layers by using the entropy change $R^{\ell} = (E^{\ell-1} - E^{\ell}) / E^{\ell-1}$.
+        \item Accumulates entropy ratios to determine $\alpha_{\ell}$:
+        \[
+        \alpha_{\ell} = \min\Bigl\{k \sum_{j=1}^{\ell} R^j, \; 1\Bigr\} .
+        \]
+        which is the proportion of static tokens that are reused at layer $\ell$.
+    \end{dashlist}
+    \item  \textbf{KV Cache Update and Reusing Protocol}. At timestep $t$, given visual token representations $H_t(\ell, i)$ at layer $\ell$:
+    \[
+    K_t(\ell, i) = \begin{cases}
+    K_{t-1}(\ell, i), & \text{if } i \in P_{\text{reuse}} \\
+    W_K^{\ell} H_t(\ell, i), & \text{otherwise}
+    \end{cases}, \quad
+    V_t(\ell, i) = \begin{cases}
+    V_{t-1}(\ell, i), & \text{if } i \in P_{\text{reuse}} \\
+    W_V^{\ell} H_t(\ell, i), & \text{otherwise}
+    \end{cases}
+    \]
+\end{dashlist}
+% \textbf{Computational Overhead and Empirical Benchmarks}
+% \begin{dashlist}
+%     \item \textbf{Overhead vs. Reduction}:
+%     \begin{dashlist}
+%         \item Patch similarity overhead $O(H^2)$ and attention entropy filtering $O(L_t L_v D + L^2 D)$ are negligible compared to full Transformer layer forward pass $O(4 L D^2 + 2 L^2 D + 2 L D M)$.
+%         \item Achieves ~27\% theoretical FLOPs reduction per decoding step.
+%     \end{dashlist}
+%     \item \textbf{Benchmark Performance}:
+%     \begin{dashlist}
+%         \item \textbf{LIBERO Benchmark (OpenVLA)}: Achieves $1.63\times$ speedup in CUDA latency ($51.91\text{ ms} \to 31.83\text{ ms}$) with negligible success rate change ($75.0\% \to 74.7\%$).
+%         \item \textbf{Action Chunking (OpenVLA-OFT)}: Boosts control frequency from $65.1\text{ Hz}$ to $79.0\text{ Hz}$ ($+13.9\text{ Hz}$ increase) with zero loss in task success rate ($96.8\% \to 97.4\%$).
+%         \item \textbf{SIMPLER Environment (CogAct with Diffusion Policy)}: $1.37\times$ speedup in CUDA latency ($54.29\text{ ms} \to 39.63\text{ ms}$), demonstrating cross-action-head portability.
+%         \item \textbf{Real Robot (Kinova Jaco2)}: $1.24\times$ latency reduction ($64.16\text{ ms} \to 51.85\text{ ms}$) with $84.6\%$ average success rate across 100 manipulation trials.
+%     \end{dashlist}
+% \end{dashlist}
+
+\subsubsection{Model-HW pairing}
+\textbf{Tiers classification.}
+\begin{dashlist}
+    \item  We have heterogeneous model families and heterogeneous HW, and the pairing may not be trivial when we consider time, cost and latency.
+    \item \textbf{Model tiers.} Small consumers (ACT, Diffusion Policy, SmolVLA). Big consumers (Gr00t, $\pi_0$, $\pi_{0.5}$, OpenVLA).
+    \item \textbf{HW tiers.} Basic Producers (11th Gen Intel i7-11700 CPU, Ascend 310B). Standard Producers (Intel B60 Pro, AGX Orin, Ascend 310P). Ultra Producers (Jetson Thor, RTX 4090).
+    \item Compute (FLOPS) and memory capacity (VRAM) pose an hard constraint on the choice of the HW for a given model.
+\end{dashlist}
+
+\textbf{Leaderboard.}
+\begin{dashlist}
+    \item \textbf{CET} (Cost, Energy, and Latency) across <model, XPU> pairs.
+    \item Latency is fundamental for robot control, since it bounds the control rate (frequency, Hz).
+\end{dashlist}
+
+\subsubsection{VLA Computation Characterization}
+
+\begin{dashlist}
+    \item Model size is not an indicator for latency, smaller models may exhibit an higher latency. We need to perform a fine-granied profiling for measuring the utilization, and doing a roofline analysis.
+    \item VLM backbone shows the highest SM utilization, and the action expert exhibits the lowest SM utilization. Action expert dominates latency.
+    \item \textbf{Tipically\dots}
+    \begin{dashlist}
+        \item \textbf{Autoregressive models} (LLMs, VLMs) are memory bound, due to intense KV-cache for decoding (we have a big I/O traffic due to the loading of precomputed keys and values).
+        \item \textbf{Diffusion models} for content generation are compute bound since they process long input sequences (due to high resolution and frame counts), so the resulting computational complexity saturates compute units (the number of operations increase quadratically with the number of tokens, so with many tokens we have a lot of computations to do -- MVM is memory bound, but big MMM is compute bound, since we reuse a lot).
+    \end{dashlist}
+
+    \item \textbf{In VLAs} ($\pi_0$) instead we have the "opposite":
+    \begin{dashlist}
+        \item The \textbf{VLM Backbone is compute-bound}, when considering $\pi_0$ on the RTX 4090. Because here we are not autoregressively generating a sequence, but instead the VLM acts as an encoder (no loading of cached KV), and the amount of input tokens are enough to get to a compute-bound scenario.
+        \item The \textbf{Action Expert is memory-bound}. Because here we have a very small number of input tokens, so we have far less reuse of weights.
+    \end{dashlist}
+\end{dashlist}
+
+\subsubsection{Acceleration}
+\begin{dashlist}
+    \item Combined usage of \textbf{Cache-VLA}, \textbf{Spec-VLA}, and \textbf{4-bit quantization} on OpenVLA. The combination "speculative + cache" gives the highest speedup, but all of this techniques trade-off latency with success rate.
+    \item \textbf{Compiling.} Performing Just-In-Time compilation for mapping PyTorch operations into optimized kernels gives a speed-up. The efficiency of model compilations exhibits significant HW-dependent vairability.
+    \item \textbf{DP-Cache (Diffusion Policy Cache)}: Reduces latency in iterative action experts by skipping redundant neural network forward passes during diffusion sampling.
+    \begin{dashlist}
+        \item \textit{Stable Denoising Segment}: Offline profiling shows that relative $L_1$ differences stay consistently low across middle diffusion steps (e.g., steps 20--80).
+        \item \textit{Output Caching \& Skipping}: Within this stable window, DP-Cache executes a single full forward pass to store the predicted output, then reuses this result for $S-1$ subsequent steps without invoking the neural network.
+        \item \textit{Cache Interval ($S$)}: $S$ defines the recomputation frequency (e.g., $S=4$ reuses output for 3 steps and recomputes on the $4^{\text{th}}$ step).
+    \end{dashlist}
+
+    \item Efficient acceleration requies jointly optimizing different phases (VLM vs action expert), from different povs (compilation reduces single-step overhead, DP-Cache reduces number of diffusion steps).
+    
+    \item \textbf{V-AEFusion (VLM-Action Expert pipeline parallelism.)} Exploit temporal coherence.
+    \begin{dashlist}
+        \item At timestep $t$, while the VLM processes the current observation ($Obs_t$), the action expert concurrently begins its early denoising steps using the \textbf{stale} KV cache from $Obs_{t-1}$. Once the VLM completes its forward pass, the action expert switches to the fresh KV cache of $Obs_t$ for the remaining denoising steps.
+        \item \textbf{Stale steps:} denoising iterations relying on previous cycle visual features.
+        \item V-AEFusion is justified by two properties: (1) \textbf{High temporal coherence} (the robot's view changes minimally across this brief window); (2) \textbf{Coarse-to-fine generation} (the first denoising enstablish the coarse action trajectory).
+        \item A good trade-off between speedup and accuracy is given by 5 stale steps.
+        \item V-AEFusion tries to balance the computational utilization of the VLM and the action expert, so it's speedup varies across HW platforms.
+    \end{dashlist}
+
+    \item "Double serialization" of VLAs: we have a sequential dependence between the VLM and the action expert; and we have an iterative denoising process.
+\end{dashlist}
 
 % \begin{figure}[tb]
 % \centering
