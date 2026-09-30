@@ -46,7 +46,7 @@
 \begin{document}
 
 % Title Frame
-\begin{frame}
+\begin{frame}[plain]
     \titlepage
 \end{frame}
 
@@ -659,7 +659,7 @@
                     \item Action Expert exhibits only $20\text{--}40\%$ SM utilization, yet dominates overall latency.
                 \end{itemize}
                 \vspace{0.4em}
-                \item \textbf{Inverted Generation Bottleneck}:
+                \item \textbf{Phases characteristics}:
                 \begin{itemize}
                     \item \textit{VLM Backbone is Compute-Bound}: Operates as a single-pass encoder.
                     \item \textit{Action Expert is Memory-Bound}: Small action sequence length results in low arithmetic intensity .
@@ -689,7 +689,7 @@
                 \end{itemize}
                 \item \textbf{V-AEFusion (Pipeline Parallelism)}:
                 \begin{itemize}
-                    \item Overlaps VLM prefill on frame $o_t$ with early denoising steps on Action Expert using stale KV cache from $o_{t-1}$.
+                    \item Overlaps VLM processing of $o_t$ with early denoising steps of the Action Expert using \textit{stale} KV cache from $o_{t-1}$.
                     \item 5 stale steps hide early coarse steps.
                     \item Exploit temporal coherence.
                 \end{itemize}
@@ -711,4 +711,17 @@
         \end{column}
     \end{columns}
 \end{frame}
+
+\begin{frame} [plain, noframenumbering]
+    \vfill 
+    \begin{center} 
+        {\Huge \textbf{Thank you for your attention!}} 
+
+        \vspace{1.5em}
+
+        {\Large Questions \& Discussion} 
+    \end{center} 
+    \vfill 
+\end{frame}
+
 \end{document}
