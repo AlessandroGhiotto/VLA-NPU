@@ -19,6 +19,7 @@
 *.run.xml
 *.bcf
 *.vrb
+*blx.bib
 
 *.pdf
 

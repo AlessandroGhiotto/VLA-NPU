@@ -22,9 +22,9 @@
     \end{column}
     \begin{column}{0.95\textwidth}
         \tableofcontents[currentsection,
-                        %currentsubsection,
-                        %hideothersubsections, 
-                        %sectionstyle=show/shaded, 
+                        % currentsubsection,
+                        hideothersubsections, 
+                        % sectionstyle=show/shaded, 
                         %subsectionstyle=show/shaded%/hide
                  ]
     \end{column}
@@ -355,7 +355,7 @@
             \begin{figure}
                 \centering
                 \includegraphics[width=\textwidth]{3.1-CFM.png}
-                \caption{Conditional Flow Matching Path ($\tau \in$)}
+                \caption{CFM visuals.}
             \end{figure}
         \end{column}
     \end{columns}
@@ -563,7 +563,7 @@
             \begin{itemize}
                 \item \textbf{Temporal Redundancy}: Consecutive camera frames share large, static background scenes.
                 
-                \item \textbf{Three-Step Adaptive Token Caching}:
+                \item \textbf{Token Caching}:
                 \begin{itemize}
                     \item \textit{Static Selection}: Cosine patch similarity identifies static tokens.
                     \item \textit{Task-Relevance Eviction}: Uses text-to-vision decoder attention matrix $A_{\text{vis-text}}$ to force recomputation near "attendable tokens".
@@ -609,6 +609,11 @@
                 \includegraphics[width=\textwidth]{4.1-bottleneck.png}
                 \caption{MolmoAct diagram.}
             \end{figure}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.9\textwidth]{4.1-performance.png}
+                \caption{Performance on current edge platforms.}
+            \end{figure}
         \end{column}
     \end{columns}
 \end{frame}
@@ -639,7 +644,7 @@
 
             \begin{figure}
                 \centering
-                \includegraphics[width=0.8\textwidth]{4.2-energy-latency.png}
+                \includegraphics[width=0.75\textwidth]{4.2-energy-latency.png}
                 \caption{Energy-Latency analysis}
             \end{figure}
 \end{frame}
