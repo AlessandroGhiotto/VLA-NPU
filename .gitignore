@@ -3,6 +3,12 @@
 /papers/**
 /papers-intro/
 /papers-intro/**
+/smolvla_base/
+/smolvla_base/**
+/smolvla_base_onnx/
+/smolvla_base_onnx/**
+/PyTorchSim/
+/PyTorchSim/**
 
 # LaTeX build artifacts
 *.aux
