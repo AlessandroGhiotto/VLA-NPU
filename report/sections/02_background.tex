@@ -411,6 +411,64 @@ The large MMU; the SW-controlled on-chip memory; the ability to run whole infere
 %     \item Boosts performance by $2.6\times - 3.9\times$ ($30\times - 50\times$ faster than CPU/GPU) and increases Performance/Watt to $70\times - 200\times$ over Haswell/K80.
 % \end{dashlist}
 
+
+
+\subsection{The Roofline Model}
+\label{subsec:roofline}
+\subsubsection{Understanding the Roofline Model}
+The Roofline Model is an intuitive visual bound-and-bottleneck model that ties together hardware peak compute performance, off-chip memory bandwidth, and program locality into a 2D log-log graph.
+
+\begin{dashlist}
+    \item \textbf{Operational Intensity ($I$)}: Measured as operations (e.g., FLOPs) per byte of DRAM traffic ($I = \text{Ops} / \text{Byte}$). Traffic is measured between the cache hierarchy and main memory (DRAM), directly accounting for cache filtering and memory locality optimizations.
+    \item \textbf{Attainable Performance Formula}:
+    \[
+    \text{Attainable Performance} = \min\left(\text{Peak Performance}, \; \text{Peak Memory Bandwidth} \times \text{Operational Intensity}\right) .
+    \]
+    \item \textbf{Performance Regions}:
+    \begin{dashlist}
+        \item \textit{Memory-Bound Region}: Slanted roof line ($\text{Performance} = \text{Bandwidth} \times I$). Memory bandwidth limits throughput.
+        \item \textit{Compute-Bound Region}: Flat roof line ($\text{Performance} = \text{Peak Compute}$). Hardware arithmetic capacity limits throughput.
+    \end{dashlist}
+\end{dashlist}
+
+\subsubsection{The Ridge Point and Comparing Rooflines}
+\begin{dashlist}
+    \item \textbf{Meaning of the Ridge Point}: The intersection coordinate where the slanted memory roof meets the flat compute roof.
+    \begin{dashlist}
+        \item Its $x$-coordinate defines the \textit{minimum operational intensity} required for an application to reach the system's peak computational performance.
+        \item \textit{Architectural Insight}: A ridge point far to the right indicates a system that demands high operational intensity (e.g., complex data reuse) to saturate its compute units. A ridge point far to the left means even low-intensity kernels can easily hit peak performance.
+    \end{dashlist}
+    \item \textbf{Comparing Two Rooflines}:
+    \begin{dashlist}
+        \item When comparing architectures (or hardware generations), if compute throughput increases while memory bandwidth remains constant, the flat roof moves upward and the ridge point shifts to the right.
+        \item \textit{Example (Opteron X2 vs. X4)}: Doubling compute cores without increasing memory bandwidth shifts the ridge point from $1.0 \to 4.4 \text{ FLOPs/Byte}$. Applications must increase operational intensity beyond $1.0$ to realize performance gains on the newer system.
+    \end{dashlist}
+\end{dashlist}
+
+\subsubsection{Ceilings and Optimization Strategy}
+When an application performs below its theoretical roofline, intermediate horizontal or slanted "ceilings" identify specific hardware and software bottlenecks.
+
+\begin{dashlist}
+    \item \textbf{Computational Ceilings}:
+    \begin{dashlist}
+        \item \textit{Instruction-Level Parallelism (ILP) \& SIMD}: Missing loop unrolling or vectorization places performance at a lower compute ceiling.
+        \item \textit{Floating-Point Operation Mix}: Imbalance between additions and multiplications prevents full functional unit utilization.
+    \end{dashlist}
+    \item \textbf{Memory Bandwidth Ceilings}:
+    \begin{dashlist}
+        \item \textit{Non-Unit Stride Accesses}: Strided or random memory access patterns disable hardware prefetchers, setting a lower effective bandwidth ceiling.
+        \item \textit{Memory Non-Affinity (NUMA)}: Accessing remote socket memory degrades delivered bandwidth.
+        \item \textit{Lack of Software Prefetching}: Failing to maintain memory operations in flight reduces sustained throughput.
+    \end{dashlist}
+    \item \textbf{Breaking Through Ceilings}:
+    \begin{dashlist}
+        \item \textit{Stacking / Order}: Ceilings are ordered from bottom to top by implementation difficulty. To break through a given ceiling, all lower optimizations must be satisfied first.
+        \item \textit{Potential Reward}: The vertical gap between a ceiling and the next higher line quantifies the potential performance gain for implementing that specific optimization.
+        \item \textit{Shifting Operational Intensity}: Cache optimizations (e.g., cache blocking, padding to eliminate conflict misses, or store-no-allocate instructions) reduce DRAM traffic, shifting the application's point to the right into higher performance zones.
+    \end{dashlist}
+\end{dashlist}
+
+
 %---------------------------------------------------------------------
 % TRANSFORMER AND VISION TRANSFORMER
 %---------------------------------------------------------------------
