@@ -7,6 +7,7 @@
 ### 1. Presentations (`presentations/`)
 
 ### 2. Continuous Report (`report/`)
+- Latest compiled report: [report.pdf](https://github.com/AlessandroGhiotto/VLA-NPU/releases/latest/download/report.pdf) (PDFs are attached to the [releases](https://github.com/AlessandroGhiotto/VLA-NPU/releases), not versioned; `p1`: part 1, SmolVLA profiling on PyTorchSim).
 
 ### 3. Shared Figures (`figures/`)
 
