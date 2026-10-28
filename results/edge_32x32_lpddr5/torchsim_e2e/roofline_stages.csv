@@ -1,0 +1,5 @@
+phase,multiplier,gflop,compulsory_mb,ai_flop_per_byte,measured_mb,traffic_ratio,measured_ai,t_compute_cyc,t_mem_cyc,regime,roofline_cyc,measured_cyc,efficiency_pct,sa_util_pct,pe_occupancy_pct
+vision,3,213.809,348.88,612.8,6038.67,17.31,35.4,104398848,6814020,compute,104398848,239954346,43.5,43.5,100.0
+connector,3,1.51,50.58,29.9,59.82,1.18,25.2,737280,987840,memory,987840,1333412,74.1,55.3,100.0
+prefix,1,79.381,641.28,123.8,3755.15,5.86,21.1,38760030,12525093,compute,38760030,85176254,45.5,48.5,93.9
+denoise,10,11.425,409.56,27.9,872.06,2.13,13.1,5578788,7999168,memory,7999168,21942469,36.5,33.0,77.1

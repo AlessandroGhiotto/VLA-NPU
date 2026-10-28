@@ -1,0 +1,7 @@
+kernel,tensor,dir,insts,mb,unique_mb,reload,tile
+0,arg0,read,1536,3.1457,3.1457,1.0,1x2x4x64
+0,arg1,write,1535,3.1437,3.1437,1.0,1x2x4x64
+1,arg0,read,48,3.1457,3.1457,1.0,64x256
+1,arg1,read,48,47.1859,47.1859,1.0,256x960
+1,arg1,write,1,0.002,0.002,1.0,1x2x4x64
+1,arg2,write,1,0.2458,0.2458,1.0,64x960

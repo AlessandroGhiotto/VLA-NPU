@@ -1,0 +1,114 @@
+{
+  "name": "e2e",
+  "mode": "timing",
+  "dtype": "fp32",
+  "config": "/workspace/3-MDP/configs/edge_32x32_lpddr5.yml",
+  "mapping": "heuristic",
+  "sdpa": "flash (vision)",
+  "sequence": [
+    "vision",
+    "connector",
+    "vision",
+    "connector",
+    "vision",
+    "connector",
+    "prefix",
+    "denoise",
+    "denoise",
+    "denoise",
+    "denoise",
+    "denoise",
+    "denoise",
+    "denoise",
+    "denoise",
+    "denoise",
+    "denoise"
+  ],
+  "launches": [
+    {
+      "launch": 0,
+      "stage": "vision",
+      "first_kernel": 0
+    },
+    {
+      "launch": 1,
+      "stage": "connector",
+      "first_kernel": 154
+    },
+    {
+      "launch": 2,
+      "stage": "vision",
+      "first_kernel": 157
+    },
+    {
+      "launch": 3,
+      "stage": "connector",
+      "first_kernel": 311
+    },
+    {
+      "launch": 4,
+      "stage": "vision",
+      "first_kernel": 314
+    },
+    {
+      "launch": 5,
+      "stage": "connector",
+      "first_kernel": 468
+    },
+    {
+      "launch": 6,
+      "stage": "prefix",
+      "first_kernel": 471
+    },
+    {
+      "launch": 7,
+      "stage": "denoise",
+      "first_kernel": 896
+    },
+    {
+      "launch": 8,
+      "stage": "denoise",
+      "first_kernel": 1329
+    },
+    {
+      "launch": 9,
+      "stage": "denoise",
+      "first_kernel": 1762
+    },
+    {
+      "launch": 10,
+      "stage": "denoise",
+      "first_kernel": 2195
+    },
+    {
+      "launch": 11,
+      "stage": "denoise",
+      "first_kernel": 2628
+    },
+    {
+      "launch": 12,
+      "stage": "denoise",
+      "first_kernel": 3061
+    },
+    {
+      "launch": 13,
+      "stage": "denoise",
+      "first_kernel": 3494
+    },
+    {
+      "launch": 14,
+      "stage": "denoise",
+      "first_kernel": 3927
+    },
+    {
+      "launch": 15,
+      "stage": "denoise",
+      "first_kernel": 4360
+    },
+    {
+      "launch": 16,
+      "stage": "denoise",
+      "first_kernel": 4793
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "connector",
+  "mode": "timing",
+  "dtype": "fp32",
+  "config": "/workspace/3-MDP/configs/sweep_bw_64x64_ch8.yml",
+  "mapping": "heuristic",
+  "sdpa": "flash (vision)",
+  "sequence": [
+    "connector"
+  ],
+  "launches": [
+    {
+      "launch": 0,
+      "stage": "connector",
+      "first_kernel": 0
+    }
+  ]
+}

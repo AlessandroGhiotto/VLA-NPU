@@ -1,0 +1,16 @@
+{
+  "phase": "vision_layer",
+  "mode": "timing",
+  "dtype": "fp32",
+  "config": "/workspace/3-MDP/configs/timing_heuristic.yml",
+  "mapping": "heuristic",
+  "sdpa": "flash",
+  "multiplier": 36,
+  "input_shapes": [
+    [
+      1,
+      1024,
+      768
+    ]
+  ]
+}

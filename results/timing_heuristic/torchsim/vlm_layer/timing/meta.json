@@ -1,0 +1,32 @@
+{
+  "phase": "vlm_layer",
+  "mode": "timing",
+  "dtype": "fp32",
+  "config": "/workspace/3-MDP/configs/timing_heuristic.yml",
+  "mapping": "heuristic",
+  "sdpa": "none",
+  "multiplier": 16,
+  "input_shapes": [
+    [
+      1,
+      241,
+      960
+    ],
+    [
+      1,
+      241,
+      1,
+      32
+    ],
+    [
+      1,
+      241,
+      1,
+      32
+    ],
+    [
+      241,
+      241
+    ]
+  ]
+}

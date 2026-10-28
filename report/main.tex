@@ -13,6 +13,13 @@
 \usepackage{titlesec}
 \usepackage{xcolor}
 \usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+% stage colours of the plots (src/p1_profiling/plots/style.py)
+\definecolor{visc}{HTML}{2A78D6}
+\definecolor{conc}{HTML}{EB6834}
+\definecolor{prec}{HTML}{1BAF7A}
+\definecolor{denc}{HTML}{EDA100}
 \usepackage{eso-pic}
 \usepackage{transparent}
 \usepackage{caption}
@@ -23,6 +30,13 @@
 \usepackage{tcolorbox}
 \usepackage{stfloats}
 \usepackage{microtype}
+\usepackage[section]{placeins}  % floats stay inside their section
+% floats at the top of a page or on pages of their own, never top + text + bottom
+\makeatletter\renewcommand{\fps@figure}{tp}\renewcommand{\fps@table}{tp}\makeatother
+\setcounter{topnumber}{2}
+\renewcommand{\topfraction}{0.8}
+\renewcommand{\textfraction}{0.15}
+\renewcommand{\floatpagefraction}{0.65}
 
 %CUSTOM DASHLIST
 \newlist{dashlist}{itemize}{3}

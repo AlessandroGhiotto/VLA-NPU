@@ -1,0 +1,18 @@
+{
+  "name": "vision",
+  "mode": "timing",
+  "dtype": "fp32",
+  "config": "/workspace/3-MDP/configs/sweep_sa_32x32_spad4m.yml",
+  "mapping": "heuristic",
+  "sdpa": "flash (vision)",
+  "sequence": [
+    "vision"
+  ],
+  "launches": [
+    {
+      "launch": 0,
+      "stage": "vision",
+      "first_kernel": 0
+    }
+  ]
+}

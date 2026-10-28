@@ -1,0 +1,44 @@
+{
+  "phase": "expert_self_layer",
+  "mode": "timing",
+  "dtype": "fp32",
+  "config": "/workspace/3-MDP/configs/timing_heuristic.yml",
+  "mapping": "heuristic",
+  "sdpa": "none",
+  "multiplier": 80,
+  "input_shapes": [
+    [
+      1,
+      50,
+      720
+    ],
+    [
+      1,
+      241,
+      5,
+      64
+    ],
+    [
+      1,
+      241,
+      5,
+      64
+    ],
+    [
+      1,
+      50,
+      1,
+      32
+    ],
+    [
+      1,
+      50,
+      1,
+      32
+    ],
+    [
+      50,
+      291
+    ]
+  ]
+}

@@ -1,0 +1,9 @@
+stage prefix configs/pytorchsim/sweep_bw_64x64_ch8.yml
+stage denoise configs/pytorchsim/sweep_bw_64x64_ch8.yml
+stage connector configs/pytorchsim/sweep_bw_64x64_ch8.yml
+stage prefix configs/pytorchsim/sweep_bw_64x64_ch16.yml
+stage denoise configs/pytorchsim/sweep_bw_64x64_ch16.yml
+stage connector configs/pytorchsim/sweep_bw_64x64_ch16.yml
+stage prefix configs/pytorchsim/sweep_sa_128x128_spad4m.yml
+stage denoise configs/pytorchsim/sweep_sa_128x128_spad4m.yml
+stage connector configs/pytorchsim/sweep_sa_128x128_spad4m.yml

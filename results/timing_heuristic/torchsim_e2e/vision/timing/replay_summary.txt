@@ -1,0 +1,18 @@
+/workspace/PyTorchSim/TOGSim/build/bin/Simulator --config /workspace/3-MDP/configs/pytorchsim/timing_heuristic.yml --models_list /tmp/tmp2ym52dt4.trace --log_level trace
+cycles: replay 19,678,572 vs original 19,678,572 (identical)
+DRAM requests: Ramulator 91,800,976 reads / 19,679,488 writes; DMA instructions 91,800,976 / 19,679,488 (+0.00%); skipped MOVINs 0
+array busy: 8,663,741 (TOGSim SA active 7,748,512, summed over arrays)
+vector busy: 10,590,476 (TOGSim 10,860,880); DMA busy: 14,364,251 (TOGSim 6,967,574)
+time: array 44.0%, vector 32.6%, exposed_mem 23.3%, other 0.0% of 19,678,571 cycles
+  rd_compulsory             348.9 MB (  9.8%)
+  rd_intermediate          1066.3 MB ( 29.9%)
+  rd_cross_kernel            18.9 MB (  0.5%)
+  rd_partial_sum              0.3 MB (  0.0%)
+  rd_tiling_external        680.5 MB ( 19.1%)
+  rd_tiling_produced        755.4 MB ( 21.2%)
+  rd_misaligned              67.4 MB (  1.9%)
+  wr_intermediate           629.4 MB ( 17.6%)
+  wr_output                   0.0 MB (  0.0%)
+  wr_rewrites                 0.0 MB (  0.0%)
+  wr_misaligned               0.4 MB (  0.0%)
+wrote /workspace/3-MDP/results/timing_heuristic/torchsim_e2e/vision/timing/inst_kernels.csv and inst_traffic.csv

@@ -9,3 +9,16 @@
 ### 2. Continuous Report (`report/`)
 
 ### 3. Shared Figures (`figures/`)
+
+### 4. Code (`src/`), organised per project phase
+- `src/common/`: phase-independent helpers (TOGSim log parser, PyTorchSim runner setup, host monitor).
+- `src/p1_profiling/`: part 1, end-to-end profiling of SmolVLA on PyTorchSim (model re-implementation, runners, analysis) and `plots/` (all part-1 figures, from the summary CSVs).
+
+### 5. Configs (`configs/`)
+- `configs/pytorchsim/`: simulated NPUs (big TPUv3-like, edge 32x32/64x64, bandwidth and array sweeps) and `jobs/` lists.
+- `configs/scalesim/`: SCALE-Sim cross-check.
+
+### 6. Results
+- `results/`: summary CSVs only (raw simulator logs are not versioned), one directory per NPU config.
+- `figures/plots/p1/`: part-1 figures (PDF for the report, PNG for markdown).
+- `ENVIRONMENT.md`: container setup.

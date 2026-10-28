@@ -1,0 +1,7 @@
+# Instruction-level replays of the forced-tiling runs (non-vision)
+replay prefix configs/pytorchsim/extmap_64x64_ch4.yml
+replay prefix configs/pytorchsim/extmap_64x64_ch1.yml
+replay denoise configs/pytorchsim/extmap_64x64_ch4.yml
+replay denoise configs/pytorchsim/extmap_64x64_ch1.yml
+replay connector configs/pytorchsim/extmap_64x64_ch4.yml
+replay connector configs/pytorchsim/extmap_64x64_ch1.yml

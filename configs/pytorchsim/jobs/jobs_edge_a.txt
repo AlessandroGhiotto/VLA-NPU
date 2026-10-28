@@ -1,0 +1,8 @@
+stage e2e configs/pytorchsim/edge_64x64_lpddr5.yml
+stage vision configs/pytorchsim/edge_64x64_lpddr5.yml
+stage prefix configs/pytorchsim/edge_32x32_lpddr5.yml
+stage denoise configs/pytorchsim/edge_32x32_lpddr5.yml
+stage connector configs/pytorchsim/edge_32x32_lpddr5.yml
+stage prefix configs/pytorchsim/edge_64x64_lpddr5.yml
+stage denoise configs/pytorchsim/edge_64x64_lpddr5.yml
+stage connector configs/pytorchsim/edge_64x64_lpddr5.yml

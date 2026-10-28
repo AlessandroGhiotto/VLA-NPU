@@ -1,0 +1,32 @@
+{
+  "phase": "vlm_layer",
+  "mode": "check",
+  "dtype": "fp32",
+  "config": "/workspace/3-MDP/configs/pytorchsim/functional_extmap_64x64.yml",
+  "mapping": "external-then-heuristic",
+  "sdpa": "none",
+  "multiplier": 16,
+  "input_shapes": [
+    [
+      1,
+      241,
+      960
+    ],
+    [
+      1,
+      241,
+      1,
+      32
+    ],
+    [
+      1,
+      241,
+      1,
+      32
+    ],
+    [
+      241,
+      241
+    ]
+  ]
+}

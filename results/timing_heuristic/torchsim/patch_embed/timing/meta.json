@@ -1,0 +1,16 @@
+{
+  "phase": "patch_embed",
+  "mode": "timing",
+  "dtype": "fp32",
+  "config": "/workspace/3-MDP/configs/timing_heuristic.yml",
+  "mapping": "heuristic",
+  "sdpa": "none",
+  "multiplier": 3,
+  "input_shapes": [
+    [
+      1,
+      1024,
+      768
+    ]
+  ]
+}

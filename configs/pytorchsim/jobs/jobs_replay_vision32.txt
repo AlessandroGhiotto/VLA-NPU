@@ -1,0 +1,2 @@
+# Instruction-level replay of edge 32x32 vision: TOGSim needs ~10 GB (flash-SDPA tiles), run alone
+replay vision configs/pytorchsim/edge_32x32_lpddr5.yml

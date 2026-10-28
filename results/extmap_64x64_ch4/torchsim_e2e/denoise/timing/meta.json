@@ -1,0 +1,18 @@
+{
+  "name": "denoise",
+  "mode": "timing",
+  "dtype": "fp32",
+  "config": "/workspace/3-MDP/configs/pytorchsim/extmap_64x64_ch4.yml",
+  "mapping": "external-then-heuristic",
+  "sdpa": "flash (vision)",
+  "sequence": [
+    "denoise"
+  ],
+  "launches": [
+    {
+      "launch": 0,
+      "stage": "denoise",
+      "first_kernel": 0
+    }
+  ]
+}

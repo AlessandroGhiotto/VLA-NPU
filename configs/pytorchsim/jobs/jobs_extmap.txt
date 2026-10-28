@@ -1,0 +1,7 @@
+# Forced tiling (make_mapping.py): stage runs on the 64x64 NPU at 12.8 and 51.2 GB/s. Vision last, one at a time.
+stage prefix configs/pytorchsim/extmap_64x64_ch4.yml
+stage prefix configs/pytorchsim/extmap_64x64_ch1.yml
+stage denoise configs/pytorchsim/extmap_64x64_ch4.yml
+stage denoise configs/pytorchsim/extmap_64x64_ch1.yml
+stage connector configs/pytorchsim/extmap_64x64_ch4.yml
+stage connector configs/pytorchsim/extmap_64x64_ch1.yml

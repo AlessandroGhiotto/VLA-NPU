@@ -1,0 +1,6 @@
+# Instruction-level replays of the stage runs (replay_trace.py): vision, one at a time
+replay vision configs/pytorchsim/edge_64x64_lpddr5.yml
+replay vision configs/pytorchsim/timing_heuristic.yml
+replay vision configs/pytorchsim/sweep_sa_128x128_spad4m.yml
+replay vision configs/pytorchsim/sweep_bw_64x64_ch1.yml
+replay vision configs/pytorchsim/sweep_bw_64x64_ch16.yml

@@ -1,0 +1,3 @@
+# Forced tiling: vision stage runs (one at a time: flash-SDPA TOGSim ~2-3 GB on 64x64)
+stage vision configs/pytorchsim/extmap_64x64_ch4.yml
+stage vision configs/pytorchsim/extmap_64x64_ch1.yml

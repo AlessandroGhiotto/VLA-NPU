@@ -1,0 +1,43 @@
+% !TEX root = ../main.tex
+% SmolVLA as a workload: block height is proportional to the number of tokens of each stage.
+\begin{tikzpicture}[
+    font=\footnotesize,
+    blk/.style={draw=#1, fill=#1!18, line width=0.8pt},
+    lab/.style={align=center, inner sep=1pt},
+    arr/.style={-{Stealth[length=2mm]}, line width=0.7pt, draw=black!70},
+  ]
+  \def\h{3.2/1024}   % cm per token
+  % ---- input: one camera image at a time (3 cameras -> vision and connector run 3 times)
+  \draw[fill=black!8, draw=black!50] (0, 1.15) rectangle ++(0.9, 0.9);
+  \node[lab, above] at (0.45, 2.1) {1 camera\\$512{\times}512$};
+  % ---- vision encoder: 1024 tokens
+  \draw[blk=visc] (1.9, 0) rectangle (4.5, 3.2);
+  \node[lab] at (3.2, 1.6) {\textbf{Vision encoder}\\(SigLIP)\\[2pt]12 layers\\$d{=}768$, MLP 3072\\[2pt]\textbf{1024 tokens}};
+  \draw[visc!80!black, line width=0.7pt] (0, 3.35) -- (0, 3.5) -- node[lab, above] {\textbf{$\times$3} cameras, one image at a time} (6.9, 3.5) -- (6.9, 3.35);
+  \draw[arr] (0.95, 1.6) -- node[lab, above] {\scriptsize $16{\times}16$} node[lab, below] {\scriptsize patches} (1.85, 1.6);
+  % ---- connector: 64 tokens per camera
+  \draw[blk=conc] (5.4, 0) rectangle (6.9, 64*\h);
+  \node[lab, above] at (6.15, 64*\h) {\textbf{Connector}\\pixel shuffle\\+ linear\\\textbf{64 tokens}};
+  \draw[arr] (4.5, 0.1) -- (5.4, 0.1);
+  % ---- prefix: 192 image + 48 text + 1 state = 241 tokens
+  \draw[blk=prec] (8.1, 0) rectangle (10.7, 241*\h);
+  \node[lab, above] at (9.4, 241*\h) {\textbf{VLM prefix} (SmolVLM2)\\16 layers, $d{=}960$, MLP 2560\\[2pt]\textbf{241 tokens} = 192 image\\+ 48 text + 1 state};
+  \draw[arr] (6.9, 0.1) -- node[lab, below=1pt] {\scriptsize $3{\times}64$} (8.1, 0.1);
+  \node[lab, anchor=north] (txt) at (9.4, -0.55) {task text, robot state};
+  \draw[arr] (txt.north) -- (9.4, 0);
+  % ---- action expert: 50 tokens, 10 steps
+  \draw[blk=denc] (12.4, 0) rectangle (15.0, 50*\h);
+  \node[lab, above] at (13.7, 50*\h+0.95) {\textbf{Action expert}\\16 layers, $d{=}720$, MLP 2048\\[2pt]\textbf{50 tokens} (the action chunk)};
+  \draw[arr] (10.7, 0.1) -- node[lab, above] {\scriptsize KV cache} node[lab, below=1pt] {\scriptsize 241 keys} (12.4, 0.1);
+  \draw[arr, draw=denc!80!black] (15.0, 0.08) -- ++(0.35, 0) -- ++(0, 0.45) -- node[lab, above] {\textbf{$\times$10} denoise steps} ++(-2.95, 0) -- ++(0, -0.3);
+  \node[lab, anchor=north] (noise) at (13.7, -0.55) {noisy actions};
+  \draw[arr] (noise.north) -- (13.7, 0);
+  \draw[arr] (15.35, 0.08) -- (16.0, 0.08) node[lab, right] {50\\actions};
+  % ---- arithmetic intensity row
+  \draw[black!30] (-0.1, -1.15) -- (16.9, -1.15);
+  \node[lab, anchor=west] at (-0.1, -1.5) {FLOP/B (fp32):};
+  \node[lab] at (3.2, -1.5) {\textbf{613}};
+  \node[lab] at (6.15, -1.5) {\textbf{30}};
+  \node[lab] at (9.4, -1.5) {\textbf{124}};
+  \node[lab] at (13.7, -1.5) {\textbf{28}};
+\end{tikzpicture}

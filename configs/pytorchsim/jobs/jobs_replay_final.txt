@@ -1,0 +1,2 @@
+# remaining vision replays, one at a time
+replay vision configs/pytorchsim/extmap_64x64_ch1.yml

@@ -9,6 +9,22 @@
 /smolvla_base_onnx/**
 /PyTorchSim/
 /PyTorchSim/**
+/SCALE-Sim/
+/SCALE-Sim/**
+*build-temp*/**
+*build-temp*/
+/logs/**
+/logs/
+CLAUDE.md
+/docs/
+/.claude/
+/prompt*.md
+/prompt*.txt
+__pycache__/
+
+# Results: keep summary CSVs and meta.json; raw TOGSim logs (*.log, below) and superseded runs stay local
+/results/archive/
+/results/**/*.trace
 
 # LaTeX build artifacts
 *.aux
@@ -28,6 +44,8 @@
 *blx.bib
 
 *.pdf
+# generated plots are included by the report
+!/figures/plots/**/*.pdf
 
 
 # OS and Editor artifacts

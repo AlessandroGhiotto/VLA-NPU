@@ -20,19 +20,25 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 ```bash
 docker pull ghcr.io/psal-postech/torchsim-ci:v1.1.0
 
+# Run the Docker container
+# docker run -it \
+#   --ipc=host \
+#   --name torchsim \
+#   -w /workspace/PyTorchSim \
+#   ghcr.io/psal-postech/torchsim-ci:v1.1.0 bash
+
+
+### Mounting 3-MDP folder
+# (first install nvidia-container toolkit)
 docker run -it \
   --ipc=host \
+  --gpus all \
   --name torchsim \
-  -v $(pwd):/workspace/PyTorchSim \
+  -v $(pwd):/workspace/3-MDP \
   -w /workspace/PyTorchSim \
   ghcr.io/psal-postech/torchsim-ci:v1.1.0 bash
 
-# Run the Docker container
-docker run -it \
-  --ipc=host \
-  --name torchsim \
-  -w /workspace/PyTorchSim \
-  ghcr.io/psal-postech/torchsim-ci:v1.1.0 bash
+pip install "lerobot[smolvla]"
 
 docker start -ai torchsim
 ```
@@ -61,18 +67,33 @@ docker start -ai torchsim
 - `docker rm my_env`: Removes the container instance (your local code on the host remains safe).
 - `docker rmi <image_name>`: Removes the cached image blueprint to free up disk space.
 
-## APPTAINER
+## Running SmolVLA phases on PyTorchSim
 
 ```bash
-apptainer build --sandbox torchsim-sandbox \
- docker://ghcr.io/psal-postech/torchsim-ci:v1.1.0
-
-apptainer exec --writable \
- /home/ghi/Documents/HPC-PoliMi/torchsim-sandbox \
- mkdir -p /workspace/3-MDP
-
-apptainer shell --nv \
- --bind /home/ghi/Documents/HPC-PoliMi/3-MDP:/workspace/ \
- --pwd /workspace/PyTorchSim \
- /home/ghi/Documents/HPC-PoliMi/torchsim-sandbox
+docker update --memory 9g --memory-swap 12g torchsim   # protect the host from OOM
+docker start torchsim
+docker exec -it torchsim bash -lc 'cd /workspace/3-MDP && python src/p1_profiling/torchsim_smolvla.py vlm_layer --mode timing'
+python3 src/common/parse_togsim.py          # -> results/timing_heuristic/torchsim/phase_summary.csv
 ```
+
+Phases: `patch_embed connector vision_layer vlm_layer expert_self_layer expert_cross_layer`. Use `--mode check` for NPU-vs-CPU validation (not for `vision_layer`, see `CLAUDE.md`). Run one phase at a time.
+
+### core dump freeze
+
+```bash
+sudo mkdir -p /etc/systemd/coredump.conf.d && printf '[Coredump]\nStorage=none\nProcessSizeMax=0\n' | sudo tee /etc/systemd/coredump.conf.d/no-dumps.conf
+```
+
+What it does:
+
+- It creates /etc/systemd/coredump.conf.d/no-dumps.conf with Storage=none and ProcessSizeMax=0.
+- When a process crashes, systemd-coredump will only log the crash and won't read, compress or store the core image.
+- A dozen simultaneous crashes then cost almost nothing, instead of a dozen multi-GB dumps running on the host outside Docker's memory cap.
+- systemd-coredump is started fresh for each crash, so it takes effect right away; no reboot or service restart is needed.
+
+Side effect:
+
+- No core dumps are saved for any program on the laptop, including desktop apps. coredumpctl will still list crashes but have no core to debug.
+- For this project that doesn't matter.
+
+To undo: `sudo rm /etc/systemd/coredump.conf.d/no-dumps.conf`

@@ -1,0 +1,1 @@
+stage vision configs/pytorchsim/sweep_sa_32x32_spad4m.yml

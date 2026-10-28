@@ -1,0 +1,7 @@
+gemm,M,N,K,ideal_cycles,pytorchsim_cycles,scalesim_cycles,pytorchsim_util_pct,scalesim_util_pct,scalesim_over_pytorchsim
+vision_qkvo,1024,768,768,147456,153470,174815,96.1,84.3,1.14
+vision_fc1,1024,3072,768,589824,602445,699263,97.9,84.3,1.16
+vlm_mlp_up,241,2560,960,144600,163081,258599,88.7,55.9,1.59
+expert_mlp_up,50,2048,720,18000,24426,92159,73.7,19.5,3.77
+expert_mlp_down,50,720,2048,18000,31816,92159,56.6,19.5,2.9
+expert_cross_kv,241,320,320,6025,8420,10774,71.6,55.9,1.28

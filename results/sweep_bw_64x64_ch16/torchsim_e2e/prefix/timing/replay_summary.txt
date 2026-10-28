@@ -1,0 +1,18 @@
+/workspace/PyTorchSim/TOGSim/build/bin/Simulator --config /workspace/3-MDP/configs/pytorchsim/sweep_bw_64x64_ch16.yml --models_list /tmp/tmpqtzo5bde.trace --log_level trace
+cycles: replay 23,413,333 vs original 23,413,333 (identical)
+DRAM requests: Ramulator 98,786,912 reads / 14,331,872 writes; DMA instructions 98,786,912 / 14,331,872 (+0.00%); skipped MOVINs 0
+array busy: 10,851,364 (TOGSim SA active 10,322,337, summed over arrays)
+vector busy: 3,727,824 (TOGSim 3,806,496); DMA busy: 21,479,909 (TOGSim 7,105,248)
+time: array 46.3%, vector 15.8%, exposed_mem 37.8%, other 0.0% of 23,413,332 cycles
+  rd_compulsory             631.3 MB ( 17.4%)
+  rd_intermediate           777.1 MB ( 21.5%)
+  rd_cross_kernel            25.5 MB (  0.7%)
+  rd_partial_sum              0.1 MB (  0.0%)
+  rd_tiling_external       1543.4 MB ( 42.6%)
+  rd_tiling_produced        116.8 MB (  3.2%)
+  rd_misaligned              67.0 MB (  1.9%)
+  wr_intermediate           437.5 MB ( 12.1%)
+  wr_output                   3.1 MB (  0.1%)
+  wr_rewrites                 9.9 MB (  0.3%)
+  wr_misaligned               8.1 MB (  0.2%)
+wrote /workspace/3-MDP/results/sweep_bw_64x64_ch16/torchsim_e2e/prefix/timing/inst_kernels.csv and inst_traffic.csv

@@ -1,0 +1,18 @@
+/workspace/PyTorchSim/TOGSim/build/bin/Simulator --config /workspace/3-MDP/configs/pytorchsim/extmap_64x64_ch4.yml --models_list /tmp/tmp3m4yrkfz.trace --log_level trace
+cycles: replay 1,174,279 vs original 1,174,279 (identical)
+DRAM requests: Ramulator 1,680,384 reads / 115,200 writes; DMA instructions 1,680,384 / 115,200 (+0.00%); skipped MOVINs 0
+array busy: 194,592 (TOGSim SA active 184,348, summed over arrays)
+vector busy: 10,895 (TOGSim 12,432); DMA busy: 1,166,295 (TOGSim 448,896)
+time: array 16.6%, vector 0.9%, exposed_mem 82.2%, other 0.3% of 1,174,278 cycles
+  rd_compulsory              50.3 MB ( 87.6%)
+  rd_intermediate             3.1 MB (  5.5%)
+  rd_cross_kernel             0.0 MB (  0.0%)
+  rd_partial_sum              0.0 MB (  0.0%)
+  rd_tiling_external          0.0 MB (  0.0%)
+  rd_tiling_produced          0.0 MB (  0.0%)
+  rd_misaligned               0.3 MB (  0.5%)
+  wr_intermediate             3.1 MB (  5.5%)
+  wr_output                   0.2 MB (  0.4%)
+  wr_rewrites                 0.0 MB (  0.0%)
+  wr_misaligned               0.3 MB (  0.5%)
+wrote /workspace/3-MDP/results/extmap_64x64_ch4/torchsim_e2e/connector/timing/inst_kernels.csv and inst_traffic.csv

@@ -1,0 +1,7 @@
+phase,n_logs,cycles_per_instance,multiplier,total_cycles_full_inference,systolic_util_pct,gemm_insts,vector_insts,dram_bw_gbs_avg,dram_util_pct_avg,zero_cycle_kernels
+connector,1,173490,3,520470,14.17,1536,772,377.46,78.43,0
+expert_cross_layer,1,178619,80,14289520,7.6,942,1667,243.33,50.56,0
+expert_self_layer,1,213173,80,17053840,5.98,1020,2023,234.67,48.76,0
+patch_embed,1,125915,3,377745,14.64,324,1536,135.48,28.15,0
+vision_layer,1,1655249,36,59588964,19.42,7824,23299,162.3,33.72,0
+vlm_layer,1,475299,16,7604784,19.29,2148,3589,249.26,51.79,0

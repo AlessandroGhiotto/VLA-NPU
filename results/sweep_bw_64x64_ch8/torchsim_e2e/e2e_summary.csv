@@ -1,0 +1,5 @@
+name,cycles,sa_util_pct,ms,dram_mb,dram_gbs,gemm_insts,vec_insts,isolated_layers_cycles,stack_vs_isolated_pct
+vision,82060308,31.8,82.06,5722.7,69.7,600912,615952,,
+connector,618227,29.8,0.62,58.0,93.8,5760,1537,,
+prefix,41574632,24.8,41.57,3619.8,87.1,290400,78672,,
+denoise,10164020,14.7,10.16,822.3,80.9,57536,34139,,

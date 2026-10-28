@@ -1,0 +1,4 @@
+stage vision configs/pytorchsim/sweep_bw_64x64_ch2.yml
+stage vision configs/pytorchsim/sweep_bw_64x64_ch8.yml
+stage vision configs/pytorchsim/sweep_bw_64x64_ch16.yml
+stage vision configs/pytorchsim/sweep_sa_128x128_spad4m.yml

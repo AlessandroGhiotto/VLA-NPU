@@ -1,0 +1,3 @@
+kernel,operation,class,start,cycles,array,vector,exposed_mem,other,sa_busy,vu_busy,dma_busy,dma_hidden,rd_requests,rd_compulsory,rd_intermediate,rd_cross_kernel,rd_partial_sum,rd_tiling_external,rd_tiling_produced,rd_misaligned,wr_requests,wr_intermediate,wr_output,wr_rewrites,wr_misaligned
+0,clone,"other vector (norms, RoPE, act., copies)",1,917862,0,10731,907130,1,0,10731,917861,10731,107520,98304,0,0,0,0,0,9216,107448,98240,0,0,9208
+1,mm,GEMM (linear layers),917863,7772987,194592,164,7561874,16357,194592,164,7752576,190702,1572864,1474560,98240,0,64,0,0,0,7752,0,7744,0,8

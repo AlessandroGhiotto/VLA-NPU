@@ -1,0 +1,18 @@
+/workspace/PyTorchSim/TOGSim/build/bin/Simulator --config /workspace/3-MDP/configs/pytorchsim/edge_32x32_lpddr5.yml --models_list /tmp/tmpfysli6xp.trace --log_level trace
+cycles: replay 21,942,469 vs original 21,942,469 (identical)
+DRAM requests: Ramulator 22,719,131 reads / 4,532,654 writes; DMA instructions 22,719,131 / 4,532,654 (+0.00%); skipped MOVINs 0
+array busy: 7,503,892 (TOGSim SA active 7,237,736, summed over arrays)
+vector busy: 1,700,289 (TOGSim 1,766,669); DMA busy: 20,671,847 (TOGSim 6,872,735)
+time: array 34.2%, vector 7.7%, exposed_mem 57.9%, other 0.1% of 21,942,468 cycles
+  rd_compulsory             419.7 MB ( 48.1%)
+  rd_intermediate           188.4 MB ( 21.6%)
+  rd_cross_kernel             6.9 MB (  0.8%)
+  rd_partial_sum              0.0 MB (  0.0%)
+  rd_tiling_external         27.0 MB (  3.1%)
+  rd_tiling_produced         57.1 MB (  6.5%)
+  rd_misaligned              27.8 MB (  3.2%)
+  wr_intermediate           127.6 MB ( 14.6%)
+  wr_output                   2.5 MB (  0.3%)
+  wr_rewrites                 2.8 MB (  0.3%)
+  wr_misaligned              12.2 MB (  1.4%)
+wrote /workspace/3-MDP/results/edge_32x32_lpddr5/torchsim_e2e/denoise/timing/inst_kernels.csv and inst_traffic.csv

@@ -1,0 +1,7 @@
+phase,multiplier,gflop,compulsory_mb,ai_flop_per_byte,measured_mb,traffic_ratio,measured_ai,t_compute_cyc,t_mem_cyc,regime,roofline_cyc,measured_cyc,efficiency_pct,sa_util_pct,pe_occupancy_pct
+patch_embed,3,1.208,8.65,139.6,18.15,2.1,66.6,18432,16902,compute,18432,125915,14.6,14.6,100.0
+vision_layer,36,17.717,34.64,511.4,285.8,8.25,62.0,270336,67662,compute,270336,1655249,16.3,19.4,84.0
+connector,3,1.51,50.58,29.9,69.66,1.38,21.7,23040,98784,memory,98784,173490,56.9,14.2,93.8
+vlm_layer,16,4.961,42.09,117.9,126.04,2.99,39.4,75703,82209,memory,82209,475299,17.3,19.3,82.6
+expert_self_layer,80,0.683,26.05,26.2,53.22,2.04,12.8,10415,50877,memory,50877,213173,23.9,6.0,81.7
+expert_cross_layer,80,0.726,25.02,29.0,46.24,1.85,15.7,11072,48858,memory,48858,178619,27.4,7.6,81.4

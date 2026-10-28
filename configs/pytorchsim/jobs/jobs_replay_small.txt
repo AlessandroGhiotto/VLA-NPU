@@ -1,0 +1,19 @@
+# Instruction-level replays of the stage runs (replay_trace.py): prefix, denoise, connector (parallel 2)
+replay prefix configs/pytorchsim/edge_64x64_lpddr5.yml
+replay prefix configs/pytorchsim/edge_32x32_lpddr5.yml
+replay prefix configs/pytorchsim/timing_heuristic.yml
+replay prefix configs/pytorchsim/sweep_sa_128x128_spad4m.yml
+replay prefix configs/pytorchsim/sweep_bw_64x64_ch1.yml
+replay prefix configs/pytorchsim/sweep_bw_64x64_ch16.yml
+replay denoise configs/pytorchsim/edge_64x64_lpddr5.yml
+replay denoise configs/pytorchsim/edge_32x32_lpddr5.yml
+replay denoise configs/pytorchsim/timing_heuristic.yml
+replay denoise configs/pytorchsim/sweep_sa_128x128_spad4m.yml
+replay denoise configs/pytorchsim/sweep_bw_64x64_ch1.yml
+replay denoise configs/pytorchsim/sweep_bw_64x64_ch16.yml
+replay connector configs/pytorchsim/edge_64x64_lpddr5.yml
+replay connector configs/pytorchsim/edge_32x32_lpddr5.yml
+replay connector configs/pytorchsim/timing_heuristic.yml
+replay connector configs/pytorchsim/sweep_sa_128x128_spad4m.yml
+replay connector configs/pytorchsim/sweep_bw_64x64_ch1.yml
+replay connector configs/pytorchsim/sweep_bw_64x64_ch16.yml

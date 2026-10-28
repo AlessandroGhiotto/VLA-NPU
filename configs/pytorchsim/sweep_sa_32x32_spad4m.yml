@@ -1,0 +1,30 @@
+# Compute sweep (report, bandwidth and array-size sweeps): 51.2 GB/s and 4 MB scratchpad fixed, array varied
+# One 32x32 WS array (array size = vpu_num_lanes), 32 lanes x 128 KB scratchpad (4 MB), 1 GHz,
+# LPDDR5-6400 x4 channels (x16 each, 51.2 GB/s). Heuristic mapping. dram_freq_mhz omitted (derived by TOGSim).
+num_cores: 1
+core_freq_mhz: 1000
+core_stats_print_period_cycles: 100000
+num_systolic_array_per_core: 1
+
+vpu_num_lanes: 32
+vpu_spad_size_kb_per_lane: 128
+vpu_vector_length_bits: 256
+
+dram_type: ramulator2
+dram_channels: 4
+dram_stats_print_period_cycles: 100000
+ramulator_config_path: /workspace/PyTorchSim/configs/ramulator2_configs/LPDDR5.yaml
+
+icnt_type: simple
+icnt_latency_cycles: 10
+icnt_freq_mhz: 1000
+icnt_injection_ports_per_core: 4
+
+pytorchsim_functional_mode: 0
+pytorchsim_timing_mode: 1
+
+codegen_mapping_strategy: heuristic
+codegen_external_mapping_file: ''
+codegen_compiler_optimization: all
+codegen_autotune_max_retry: 10
+codegen_autotune_template_topk: 4

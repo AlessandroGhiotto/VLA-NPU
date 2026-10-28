@@ -1,0 +1,3 @@
+stage prefix configs/pytorchsim/sweep_sa_32x32_spad4m.yml
+stage denoise configs/pytorchsim/sweep_sa_32x32_spad4m.yml
+stage connector configs/pytorchsim/sweep_sa_32x32_spad4m.yml

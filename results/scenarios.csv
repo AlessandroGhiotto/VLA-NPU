@@ -1,0 +1,33 @@
+dram_gbs,scenario,stage,ms,multiplier,chunk_ms,share_pct
+12.8,heuristic,vision,577.9,3,2881.6,60.2
+12.8,heuristic,connector,7.86,3,2881.6,0.8
+12.8,heuristic,prefix,339.42,1,2881.6,11.8
+12.8,heuristic,denoise,78.49,10,2881.6,27.2
+12.8,forced,vision,447.67,3,2411.3,55.7
+12.8,forced,connector,8.69,3,2411.3,1.1
+12.8,forced,prefix,214.28,1,2411.3,8.9
+12.8,forced,denoise,82.79,10,2411.3,34.3
+12.8,fused (est),vision,287.68,3,1505.4,57.3
+12.8,fused (est),connector,7.737,3,1505.4,1.5
+12.8,fused (est),prefix,103.856,1,1505.4,6.9
+12.8,fused (est),denoise,51.527,10,1505.4,34.2
+12.8,ideal,vision,27.256,3,463.7,17.6
+12.8,ideal,connector,3.952,3,463.7,2.6
+12.8,ideal,prefix,50.1,1,463.7,10.8
+12.8,ideal,denoise,31.997,10,463.7,69.0
+51.2,heuristic,vision,137.6,3,688.8,59.9
+51.2,heuristic,connector,1.18,3,688.8,0.5
+51.2,heuristic,prefix,79.45,1,688.8,11.5
+51.2,heuristic,denoise,19.3,10,688.8,28.0
+51.2,forced,vision,113.03,3,577.1,58.8
+51.2,forced,connector,1.17,3,577.1,0.6
+51.2,forced,prefix,51.25,1,577.1,8.9
+51.2,forced,denoise,18.33,10,577.1,31.8
+51.2,fused (est),vision,72.748,3,360.1,60.6
+51.2,fused (est),connector,1.041,3,360.1,0.9
+51.2,fused (est),prefix,24.787,1,360.1,6.9
+51.2,fused (est),denoise,11.398,10,360.1,31.7
+51.2,ideal,vision,26.1,3,173.8,45.1
+51.2,ideal,connector,0.988,3,173.8,1.7
+51.2,ideal,prefix,12.525,1,173.8,7.2
+51.2,ideal,denoise,7.999,10,173.8,46.0

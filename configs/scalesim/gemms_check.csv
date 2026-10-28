@@ -1,0 +1,7 @@
+Layer Name, M, N, K,
+vision_qkvo, 1024, 768, 768,
+vision_fc1, 1024, 3072, 768,
+vlm_mlp_up, 241, 2560, 960,
+expert_mlp_up, 50, 2048, 720,
+expert_mlp_down, 50, 720, 2048,
+expert_cross_kv, 241, 320, 320,

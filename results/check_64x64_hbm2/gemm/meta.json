@@ -1,0 +1,29 @@
+{
+  "config": "/workspace/3-MDP/configs/check_64x64_hbm2.yml",
+  "launches": [
+    {
+      "shape": "1024x768x768",
+      "first_kernel": 0
+    },
+    {
+      "shape": "1024x3072x768",
+      "first_kernel": 2
+    },
+    {
+      "shape": "241x2560x960",
+      "first_kernel": 4
+    },
+    {
+      "shape": "50x2048x720",
+      "first_kernel": 6
+    },
+    {
+      "shape": "50x720x2048",
+      "first_kernel": 8
+    },
+    {
+      "shape": "241x320x320",
+      "first_kernel": 10
+    }
+  ]
+}
