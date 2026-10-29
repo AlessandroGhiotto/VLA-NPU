@@ -81,7 +81,7 @@ def main():
         ideal = r["ideal_ms"]
         stream = min(r["sa_streaming_ms"], r["array_ms"])
         parts = [stream / ideal, (r["array_ms"] - stream) / ideal] + [r[f"{k}_ms"] / ideal for k, _ in TIME[1:]]
-        return parts, f"{r['ms']:.3g} ms ({r['ms'] / ideal:.1f}×)", None
+        return parts, f"{r['ms']:.3g} ms", None
     panels(st, t, [TIME_COLOR["array"], STREAM_FILL] + [TIME_COLOR[k] for k, _ in TIME[1:]], "time / roofline ideal",
            "Where each stage's time goes (one instance), relative to its roofline ideal", "attribution_time",
            ["ideal (= 1)", None],
@@ -90,7 +90,7 @@ def main():
     def q(r):
         comp = r["compulsory_mb_roofline"]
         parts = [sum(r[f"{c}_mb"] for c in cols) / comp for _, cols in TRAFFIC]
-        return parts, f"{r['dram_mb']:,.0f} MB ({r['dram_mb'] / comp:.1f}×)", None
+        return parts, f"{r['dram_mb']:,.0f} MB", None
     panels(st, q, TRAFFIC_COLOR, "DRAM traffic / compulsory",
            "Where each stage's DRAM traffic comes from (one instance), relative to the compulsory traffic",
            "attribution_traffic", ["compulsory (= 1)", None], [l for l, _ in TRAFFIC])
